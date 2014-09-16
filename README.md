@@ -5,7 +5,7 @@ It is a modal
 
 ## Installation
 
-    bower install modal
+    bower install modal-lagden
 
 ## Author
 

@@ -1,6 +1,6 @@
 {
   "name": "modal",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Open modal",
   "author": "Thiago Lagden <lagden@gmail.com>",
   "main": "./dist/modal.js",
@@ -17,7 +17,7 @@
     ".*"
   ],
   "dependencies": {
-    "eventEmitter": "~4.2.7",
+    "eventEmitter": "~4.2.8",
     "classie": "~1.0.1"
   }
 }
