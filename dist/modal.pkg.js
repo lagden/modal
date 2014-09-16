@@ -5,7 +5,7 @@ It is a plugin to make select boxes much more user-friendly
 
 @author      Thiago Lagden <lagden [at] gmail.com>
 @copyright   2014 Thiago Lagden
-@version     0.2.0
+@version     0.2.2
 */
 
 /*!
@@ -612,7 +612,7 @@ if ( typeof define === 'function' && define.amd ) {
       while (el.hasChildNodes()) {
         c = el.lastChild;
         if (c.hasChildNodes()) {
-          el.removeChild(removeRecursive(c));
+          el.removeChild(removeAllChildren(c));
         } else {
           el.removeChild(c);
         }
@@ -688,6 +688,7 @@ if ( typeof define === 'function' && define.amd ) {
             }
             classie.add(this.modal, this.options.openClass);
             _p.overlay.call(this, true);
+            this.modal.focus();
             this.emitEvent('open');
           }
         },

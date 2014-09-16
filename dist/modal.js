@@ -43,7 +43,7 @@
       while (el.hasChildNodes()) {
         c = el.lastChild;
         if (c.hasChildNodes()) {
-          el.removeChild(removeRecursive(c));
+          el.removeChild(removeAllChildren(c));
         } else {
           el.removeChild(c);
         }
@@ -119,6 +119,7 @@
             }
             classie.add(this.modal, this.options.openClass);
             _p.overlay.call(this, true);
+            this.modal.focus();
             this.emitEvent('open');
           }
         },

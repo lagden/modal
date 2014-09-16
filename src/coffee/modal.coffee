@@ -49,7 +49,7 @@
     while el.hasChildNodes()
       c = el.lastChild
       if c.hasChildNodes()
-        el.removeChild removeRecursive(c)
+        el.removeChild removeAllChildren(c)
       else
         el.removeChild c
     return el
@@ -124,6 +124,8 @@
 
           classie.add @modal, @options.openClass
           _p.overlay.call @, true
+
+          @modal.focus()
           @.emitEvent 'open'
         return
 

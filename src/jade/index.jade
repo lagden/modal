@@ -42,22 +42,16 @@ html(lang='en')
 
         script(src='modal.pkg.js')
         script.
-            var removeRecursive;
-
-            removeRecursive = function(parent) {
-                var el;
-                while (parent.hasChildNodes()) {
-                    el = parent.lastChild;
-                    if (el.hasChildNodes()) {
-                        removeRecursive(el);
-                    } else {
-                        parent.removeChild(el);
-                    }
-                    el.textContent = '';
-                    el = null;
+            function removeAllChildren(el) {
+                var c;
+                while (el.hasChildNodes()) {
+                    c = el.lastChild;
+                    if (c.hasChildNodes())
+                        el.removeChild(removeAllChildren(c));
+                    else
+                        el.removeChild(c);
                 }
-                parent.textContent = '';
-                return parent;
+                return el;
             };
 
             var modal = new Modal({
