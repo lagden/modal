@@ -17,19 +17,27 @@ html(lang='en')
             }
 
             .hidden {
-              display: none;
+                display: none;
+            }
+
+            .alterado {
+                max-width: auto;
+                width: 60%;
+                height: 60%;
+                background-color: green;
             }
 
     title Example
     body
         h1 Example
         button#ex1(type='button') Abre o modal
+        button#ex2(type='button') Abre o modal2
         #modalContent.hidden
-          | Esse é um exemplo do modal...
+            | Esse é um exemplo do modal...
         - var n = 0
-        while n < 1000
+        while n < 20
             - n++
-            p some stuff
+            p make scroll
 
 
         script(src='modal.pkg.js')
@@ -52,21 +60,33 @@ html(lang='en')
                 return parent;
             };
 
-            var modal = new Modal(null, {
+            var modal = new Modal({
                 content: '#modalContent',
+                useOverlayClass: true,
                 beforeOpen: function(modal, close, content) {
-                    console.log('beforeOpen', modal, close, content)
-                    content.classList.add('alterado');
-                    removeRecursive(content).insertAdjacentHTML('afterbegin', '<p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p><p>alterado</p>');
+                    classie.add(content, 'alterado');
                 }
             });
 
             modal.on('open', function(){
-                console.log('abriuu');
+                console.log('abriu...');
+            });
+
+            modal.on('close', function(){
+                console.log('fechou...');
+            });
+
+            var modal2 = new Modal({
+                content: 'Isso é demais!!'
             });
 
             var btn = document.querySelector('#ex1');
+            var btn2 = document.querySelector('#ex2');
 
             btn.addEventListener('click', function(event) {
-                modal.open()
+                modal.open();
+            });
+
+            btn2.addEventListener('click', function(event) {
+                modal2.open();
             });

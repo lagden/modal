@@ -7,8 +7,7 @@
     }
   })(this, function(classie, EventEmitter) {
     'use strict';
-    var Modal, ModalException, docBody, docHtml, extend, isElement;
-    docHtml = document.querySelector('html');
+    var GUID, Modal, docBody, extend, isElement, removeAllChildren, transitionend, whichTransitionEnd;
     docBody = document.querySelector('body');
     extend = function(a, b) {
       var prop;
@@ -24,33 +23,65 @@
         return obj && typeof obj === "object" && obj.nodeType === 1 && typeof obj.nodeName === "string";
       }
     };
-    ModalException = (function() {
-      function ModalException(message, name) {
-        this.message = message;
-        this.name = name != null ? name : 'ModalException';
+    whichTransitionEnd = function() {
+      var k, transitions, v;
+      transitions = {
+        'WebkitTransition': 'webkitTransitionEnd',
+        'MozTransition': 'transitionend',
+        'OTransition': 'oTransitionEnd otransitionend',
+        'transition': 'transitionend'
+      };
+      for (k in transitions) {
+        v = transitions[k];
+        if (typeof docBody.style[k] !== 'undefined') {
+          return v;
+        }
       }
-
-      return ModalException;
-
-    })();
+    };
+    removeAllChildren = function(el) {
+      var c;
+      while (el.hasChildNodes()) {
+        c = el.lastChild;
+        if (c.hasChildNodes()) {
+          el.removeChild(removeRecursive(c));
+        } else {
+          el.removeChild(c);
+        }
+      }
+      return el;
+    };
+    transitionend = whichTransitionEnd();
+    GUID = 0;
     Modal = (function() {
       var _handlers, _p;
 
       _p = {
         getTemplate: function() {
-          return '<div class="modalWidget modalWidget-slidedown"> <div class="modalWidget__close icon-close"></div> <div class="modalWidget__box">{content}</div> </div>';
+          return '<div tabindex="0" class="modalWidget modalWidget-slidedown {id}"> <div class="modalWidget__close icon-close"></div> <div class="modalWidget__box">{content}</div> </div>';
         },
-        getElement: function(el) {
-          var out;
-          el = el || false;
-          if (el === false) {
-            return false;
+        getContent: function(c) {
+          var err, out;
+          if (isElement(c)) {
+            return c.innerHTML;
           }
-          out = typeof el === 'string' ? document.querySelector(el) : el;
-          if (isElement(out)) {
-            return out;
-          } else {
-            return false;
+          try {
+            if (typeof c === 'string') {
+              out = document.querySelector(c);
+            }
+            return out.innerHTML;
+          } catch (_error) {
+            err = _error;
+          }
+          return c;
+        },
+        overlay: function(add) {
+          var method;
+          if (add == null) {
+            add = false;
+          }
+          if (this.options.useOverlayClass) {
+            method = add ? 'add' : 'remove';
+            classie[method](docBody, this.options.overlayClass);
           }
         }
       };
@@ -71,84 +102,89 @@
           trigger = null;
         },
         onClose: function(event) {
-          var isOpen;
-          isOpen = classie.has(this.modal, this.options.openClass);
-          if (isOpen === true) {
+          this.closeTrigger = true;
+          if (this.isOpen() === true) {
             classie.remove(this.modal, this.options.openClass);
-            classie.remove(docHtml, this.options.overlayClass);
-            classie.remove(docBody, this.options.overlayClass);
+            if (this.transitionend === false) {
+              this.handlers.end(null);
+            }
             this.emitEvent('close');
           }
         },
         onOpen: function(event) {
-          var isOpen;
-          isOpen = classie.has(this.modal, this.options.openClass);
-          if (isOpen === false) {
+          this.closeTrigger = false;
+          if (this.isOpen() === false) {
             if (typeof this.options.beforeOpen === 'function') {
-              this.options.beforeOpen(this.modal, this.close, this.box);
+              this.options.beforeOpen(this.modal, this.closeHandler, this.box);
             }
             classie.add(this.modal, this.options.openClass);
-            classie.add(docHtml, this.options.overlayClass);
-            classie.add(docBody, this.options.overlayClass);
+            _p.overlay.call(this, true);
             this.emitEvent('open');
+          }
+        },
+        onTransitionEnd: function(event) {
+          if (this.closeTrigger === true) {
+            _p.overlay.call(this, false);
+            this.closeTrigger = false;
           }
         }
       };
 
-      function Modal(container, options) {
-        var content, contentStr, r, render;
-        if (container == null) {
-          container = docBody;
-        }
+      function Modal(options) {
+        var id, r, render;
         if (options == null) {
           options = {};
         }
-        this.container = _p.getElement(container);
-        if (this.container === false) {
-          throw new ModalException('✖ No valid container');
-        } else {
-          this.options = {
-            esc: true,
-            template: _p.getTemplate,
-            content: '',
-            beforeOpen: null,
-            openClass: 'modalWidget-slidedown--open',
-            overlayClass: 'modalWidget--overlay',
-            selectors: {
-              modal: '.modalWidget',
-              close: '.modalWidget__close',
-              box: '.modalWidget__box'
-            }
-          };
-          extend(this.options, options);
-          content = _p.getElement(this.options.content);
-          if (content === false) {
-            contentStr = this.options.content;
-          } else {
-            contentStr = content.innerHTML;
+        id = ++GUID;
+        this.options = {
+          esc: true,
+          template: _p.getTemplate,
+          content: '',
+          beforeOpen: null,
+          openClass: 'modalWidget-slidedown--open',
+          overlayClass: 'modalWidget--overlay',
+          useOverlayClass: false,
+          selectors: {
+            close: '.modalWidget__close',
+            box: '.modalWidget__box'
           }
-          r = {
-            'content': contentStr
-          };
-          render = this.options.template().replace(/\{(.*?)\}/g, function(a, b) {
-            return r[b];
-          });
-          this.container.insertAdjacentHTML('beforeend', render);
-          r = render = content = contentStr = null;
-          this.modal = this.container.querySelector(this.options.selectors.modal);
-          this.close = this.modal.querySelector(this.options.selectors.close);
-          this.box = this.modal.querySelector(this.options.selectors.box);
-          this.keyCodes = {
-            'esc': 27
-          };
-          this.handlers = {
-            'keyup': _handlers.onKeyUp.bind(this),
-            'open': _handlers.onOpen.bind(this),
-            'close': _handlers.onClose.bind(this)
-          };
-          this.close.addEventListener('click', this.handlers.close, false);
-          window.addEventListener('keyup', this.handlers.keyup, false);
+        };
+        extend(this.options, options);
+        this.options.selectors.modal = "modalWidget" + id;
+        r = {
+          'content': _p.getContent(this.options.content),
+          'id': this.options.selectors.modal
+        };
+        render = this.options.template().replace(/\{(.*?)\}/g, function(a, b) {
+          return r[b];
+        });
+        docBody.insertAdjacentHTML('beforeend', render);
+        r = render = null;
+        this.modal = docBody.querySelector("." + this.options.selectors.modal);
+        this.closeHandler = this.modal.querySelector(this.options.selectors.close);
+        this.box = this.modal.querySelector(this.options.selectors.box);
+        this.keyCodes = {
+          'esc': 27
+        };
+        this.handlers = {
+          'keyup': _handlers.onKeyUp.bind(this),
+          'open': _handlers.onOpen.bind(this),
+          'close': _handlers.onClose.bind(this),
+          'end': _handlers.onTransitionEnd.bind(this)
+        };
+        this.closeHandler.addEventListener('click', this.handlers.close, false);
+        this.transitionend = false;
+        if (typeof transitionend !== 'undefined') {
+          this.transitionend = true;
         }
+        if (this.transitionend) {
+          this.modal.addEventListener(transitionend, this.handlers.end, false);
+        }
+        if (this.options.esc === true) {
+          this.modal.addEventListener('keyup', this.handlers.keyup, false);
+        }
+        this.closeTrigger = false;
+        this.destroyed = false;
         return;
       }
 
@@ -158,6 +194,26 @@
 
       Modal.prototype.close = function() {
         this.handlers.close(null);
+      };
+
+      Modal.prototype.isOpen = function() {
+        var isOpen;
+        isOpen = classie.has(this.modal, this.options.openClass);
+        return isOpen;
+      };
+
+      Modal.prototype.destroy = function() {
+        if (this.destroyed === false) {
+          this.closeHandler.removeEventListener('click', this.handlers.close, false);
+          if (this.transitionend) {
+            this.modal.removeEventListener(transitionend, this.handlers.end, false);
+          }
+          if (this.options.esc === true) {
+            this.modal.removeEventListener('keyup', this.handlers.keyup, false);
+          }
+          docBody.removeChild(removeAllChildren(this.modal));
+          this.destroyed = true;
+        }
       };
 
       return Modal;
