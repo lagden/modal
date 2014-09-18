@@ -29,15 +29,16 @@ html(lang='en')
 
     title Example
     body
-        h1 Example
-        button#ex1(type='button') Abre o modal
-        button#ex2(type='button') Abre o modal2
-        #modalContent.hidden
-            | Esse é um exemplo do modal...
-        - var n = 0
-        while n < 20
-            - n++
-            p make scroll
+        .container
+            h1 Example
+            button#ex1(type='button') Abre o modal
+            button#ex2(type='button') Abre o modal2
+            #modalContent.hidden
+                | Esse é um exemplo do modal...
+            - var n = 0
+            while n < 100
+                - n++
+                p make scroll
 
 
         script(src='modal.pkg.js')
@@ -56,7 +57,10 @@ html(lang='en')
 
             var modal = new Modal({
                 content: '#modalContent',
-                useOverlayClass: true,
+                overlayElement: '.container',
+                selectors: {
+                    widget: 'modalWidget modalWidget--base'
+                },
                 beforeOpen: function(modal, close, content) {
                     classie.add(content, 'alterado');
                 }

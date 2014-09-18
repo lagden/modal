@@ -1,7 +1,3 @@
-html.modalWidget--overlay, body.modalWidget--overlay {
-  overflow: hidden;
-}
-
 .modalWidget {
   position: fixed;
   z-index: 2000;
@@ -67,4 +63,15 @@ html.modalWidget--overlay, body.modalWidget--overlay {
           transform: translateY(0%);
   -webkit-transition: -webkit-transform 0.4s ease-in-out;
           transition: transform 0.4s ease-in-out;
+}
+
+.modalWidget--base {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.modalWidget--overlay {
+  -webkit-filter: blur(3px);
+          filter: blur(3px);
+  -webkit-transition: all 0.4s ease-in-out;
+          transition: all 0.4s ease-in-out;
 }

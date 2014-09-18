@@ -1,9 +1,5 @@
 $modalWidgetCloseColor: black
 
-html, body
-    &.modalWidget--overlay
-        overflow: hidden
-
 .modalWidget
     position: fixed
     z-index: 2000
@@ -57,3 +53,11 @@ html, body
     visibility: visible
     transform: translateY(0%)
     transition: transform 0.4s ease-in-out
+
+
+.modalWidget--base
+    background-color: rgba(white, 0.2)
+
+.modalWidget--overlay
+    filter: blur(3px)
+    transition: all 0.4s ease-in-out

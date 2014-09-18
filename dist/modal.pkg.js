@@ -5,7 +5,7 @@ It is a plugin to make select boxes much more user-friendly
 
 @author      Thiago Lagden <lagden [at] gmail.com>
 @copyright   2014 Thiago Lagden
-@version     0.2.2
+@version     0.3.0
 */
 
 /*!
@@ -576,7 +576,7 @@ if ( typeof define === 'function' && define.amd ) {
     }
   })(this, function(classie, EventEmitter) {
     'use strict';
-    var GUID, Modal, docBody, extend, isElement, removeAllChildren, transitionend, whichTransitionEnd;
+    var GUID, Modal, deepExtend, docBody, extend, isElement, removeAllChildren, transitionend, whichTransitionEnd;
     docBody = document.querySelector('body');
     extend = function(a, b) {
       var prop;
@@ -584,6 +584,28 @@ if ( typeof define === 'function' && define.amd ) {
         a[prop] = b[prop];
       }
       return a;
+    };
+    deepExtend = function(out) {
+      var i, key, obj;
+      out = out || {};
+      i = 1;
+      while (i < arguments.length) {
+        obj = arguments[i];
+        if (!obj) {
+          continue;
+        }
+        for (key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            if (typeof obj[key] === "object") {
+              deepExtend(out[key], obj[key]);
+            } else {
+              out[key] = obj[key];
+            }
+          }
+        }
+        i++;
+      }
+      return out;
     };
     isElement = function(obj) {
       if (typeof HTMLElement === "object") {
@@ -626,7 +648,7 @@ if ( typeof define === 'function' && define.amd ) {
 
       _p = {
         getTemplate: function() {
-          return '<div tabindex="0" class="modalWidget modalWidget-slidedown {id}"> <div class="modalWidget__close icon-close"></div> <div class="modalWidget__box">{content}</div> </div>';
+          return '<div tabindex="0" class="{widget} {fx} {id}"> <div class="{close}"></div> <div class="{box}">{content}</div> </div>';
         },
         getContent: function(c) {
           var err, out;
@@ -648,9 +670,19 @@ if ( typeof define === 'function' && define.amd ) {
           if (add == null) {
             add = false;
           }
-          if (this.options.useOverlayClass) {
+          if (this.overlayElement !== null) {
             method = add ? 'add' : 'remove';
-            classie[method](docBody, this.options.overlayClass);
+            classie[method](this.overlayElement, this.options.overlayClass);
+          }
+        },
+        overflow: function(hidden) {
+          var v;
+          if (hidden == null) {
+            hidden = false;
+          }
+          if (this.options.useOverflow) {
+            v = hidden ? 'hidden' : 'visible';
+            docBody.style.overflow = v;
           }
         }
       };
@@ -673,7 +705,7 @@ if ( typeof define === 'function' && define.amd ) {
         onClose: function(event) {
           this.closeTrigger = true;
           if (this.isOpen() === true) {
-            classie.remove(this.modal, this.options.openClass);
+            classie.remove(this.modal, this.options.selectors.fxOpen);
             if (this.transitionend === false) {
               this.handlers.end(null);
             }
@@ -686,8 +718,9 @@ if ( typeof define === 'function' && define.amd ) {
             if (typeof this.options.beforeOpen === 'function') {
               this.options.beforeOpen(this.modal, this.closeHandler, this.box);
             }
-            classie.add(this.modal, this.options.openClass);
+            classie.add(this.modal, this.options.selectors.fxOpen);
             _p.overlay.call(this, true);
+            _p.overflow.call(this, true);
             this.modal.focus();
             this.emitEvent('open');
           }
@@ -695,6 +728,7 @@ if ( typeof define === 'function' && define.amd ) {
         onTransitionEnd: function(event) {
           if (this.closeTrigger === true) {
             _p.overlay.call(this, false);
+            _p.overflow.call(this, false);
             this.closeTrigger = false;
           }
         }
@@ -711,19 +745,26 @@ if ( typeof define === 'function' && define.amd ) {
           template: _p.getTemplate,
           content: '',
           beforeOpen: null,
-          openClass: 'modalWidget-slidedown--open',
           overlayClass: 'modalWidget--overlay',
-          useOverlayClass: false,
+          overlayElement: null,
+          useOverflow: true,
           selectors: {
-            close: '.modalWidget__close',
-            box: '.modalWidget__box'
+            widget: 'modalWidget',
+            modal: "modalWidget" + id,
+            close: 'modalWidget__close',
+            box: 'modalWidget__box',
+            fx: 'modalWidget-slidedown',
+            fxOpen: 'modalWidget-slidedown--open'
           }
         };
-        extend(this.options, options);
-        this.options.selectors.modal = "modalWidget" + id;
+        deepExtend(this.options, options);
         r = {
           'content': _p.getContent(this.options.content),
-          'id': this.options.selectors.modal
+          'id': this.options.selectors.modal,
+          'widget': this.options.selectors.widget,
+          'close': this.options.selectors.close,
+          'box': this.options.selectors.box,
+          'fx': this.options.selectors.fx
         };
         render = this.options.template().replace(/\{(.*?)\}/g, function(a, b) {
           return r[b];
@@ -731,8 +772,21 @@ if ( typeof define === 'function' && define.amd ) {
         docBody.insertAdjacentHTML('beforeend', render);
         r = render = null;
         this.modal = docBody.querySelector("." + this.options.selectors.modal);
-        this.closeHandler = this.modal.querySelector(this.options.selectors.close);
-        this.box = this.modal.querySelector(this.options.selectors.box);
+        this.closeHandler = this.modal.querySelector("." + this.options.selectors.close);
+        this.box = this.modal.querySelector("." + this.options.selectors.box);
+        this.overlayElement = null;
+        if (this.options.overlayElement !== null) {
+          if (typeof this.options.overlayElement === 'string') {
+            this.overlayElement = document.querySelector(this.options.overlayElement);
+          } else {
+            if (isElement(this.options.overlayElement === true)) {
+              this.overlayElement = this.options.overlayElement;
+            }
+          }
+        }
+        if (isElement(this.container === false)) {
+          throw new SwitchSlideException('✖ Container must be an HTMLElement');
+        }
         this.keyCodes = {
           'esc': 27
         };
@@ -768,7 +822,7 @@ if ( typeof define === 'function' && define.amd ) {
 
       Modal.prototype.isOpen = function() {
         var isOpen;
-        isOpen = classie.has(this.modal, this.options.openClass);
+        isOpen = classie.has(this.modal, this.options.selectors.fxOpen);
         return isOpen;
       };
 

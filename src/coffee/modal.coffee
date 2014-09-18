@@ -12,8 +12,7 @@
 
   'use strict'
 
-  # Elements
-  # docHtml = document.querySelector 'html'
+  # document.body
   docBody = document.querySelector 'body'
 
   # Extend object
@@ -21,6 +20,23 @@
   extend = (a, b) ->
     a[prop] = b[prop] for prop of b
     return a
+
+  # http://youmightnotneedjquery.com/
+  deepExtend = (out) ->
+    out = out or {}
+    i = 1
+
+    while i < arguments.length
+      obj = arguments[i]
+      continue unless obj
+      for key of obj
+        if obj.hasOwnProperty key
+          if typeof obj[key] is "object"
+            deepExtend out[key], obj[key]
+          else
+            out[key] = obj[key]
+      i++
+    return out
 
   # http://stackoverflow.com/a/384380/182183
   isElement = (obj) ->
@@ -67,9 +83,9 @@
     _p =
       getTemplate: ->
         return '
-          <div tabindex="0" class="modalWidget modalWidget-slidedown {id}">
-            <div class="modalWidget__close icon-close"></div>
-            <div class="modalWidget__box">{content}</div>
+          <div tabindex="0" class="{widget} {fx} {id}">
+            <div class="{close}"></div>
+            <div class="{box}">{content}</div>
           </div>'
 
       getContent: (c) ->
@@ -84,10 +100,15 @@
         return c
 
       overlay: (add = false)->
-        if @options.useOverlayClass
+        if @overlayElement isnt null
           method = if add then 'add' else 'remove'
-          # classie[method] docHtml, @options.overlayClass
-          classie[method] docBody, @options.overlayClass
+          classie[method] @overlayElement, @options.overlayClass
+        return
+
+      overflow: (hidden = false)->
+        if @options.useOverflow
+          v = if hidden then 'hidden' else 'visible'
+          docBody.style.overflow = v
         return
 
     # Event handler
@@ -107,7 +128,7 @@
         @closeTrigger = true
 
         if @isOpen() is true
-          classie.remove @modal, @options.openClass
+          classie.remove @modal, @options.selectors.fxOpen
 
           # Fallback transitionend
           @handlers.end null if @transitionend is false
@@ -122,8 +143,9 @@
           if typeof @options.beforeOpen == 'function'
             @options.beforeOpen @modal, @closeHandler, @box
 
-          classie.add @modal, @options.openClass
+          classie.add @modal, @options.selectors.fxOpen
           _p.overlay.call @, true
+          _p.overflow.call @, true
 
           @modal.focus()
           @.emitEvent 'open'
@@ -132,6 +154,7 @@
       onTransitionEnd: (event) ->
         if @closeTrigger is true
           _p.overlay.call @, false
+          _p.overflow.call @, false
           @closeTrigger = false
         return
 
@@ -146,20 +169,27 @@
         template        : _p.getTemplate
         content         : ''
         beforeOpen      : null
-        openClass       : 'modalWidget-slidedown--open'
         overlayClass    : 'modalWidget--overlay'
-        useOverlayClass : false
+        overlayElement  : null
+        useOverflow     : true
         selectors       :
-          close   : '.modalWidget__close'
-          box     : '.modalWidget__box'
+          widget  : 'modalWidget'
+          modal   : "modalWidget#{id}"
+          close   : 'modalWidget__close'
+          box     : 'modalWidget__box'
+          fx      : 'modalWidget-slidedown'
+          fxOpen  : 'modalWidget-slidedown--open'
 
-      extend @options, options
-      @options.selectors.modal = "modalWidget#{id}"
+      deepExtend @options, options
 
       # Template
       r =
-        'content': _p.getContent @options.content
-        'id': @options.selectors.modal
+        'content' : _p.getContent @options.content
+        'id'      : @options.selectors.modal
+        'widget'  : @options.selectors.widget
+        'close'   : @options.selectors.close
+        'box'     : @options.selectors.box
+        'fx'      : @options.selectors.fx
 
       render = @options.template().replace /\{(.*?)\}/g, (a, b) ->
         return r[b]
@@ -173,8 +203,21 @@
 
       # Elements
       @modal        = docBody.querySelector ".#{@options.selectors.modal}"
-      @closeHandler = @modal.querySelector @options.selectors.close
-      @box          = @modal.querySelector @options.selectors.box
+      @closeHandler = @modal.querySelector ".#{@options.selectors.close}"
+      @box          = @modal.querySelector ".#{@options.selectors.box}"
+
+      # Overlay
+      @overlayElement = null
+      if @options.overlayElement isnt null
+        if typeof  @options.overlayElement is 'string'
+          @overlayElement = document.querySelector @options.overlayElement
+        else
+          if isElement @options.overlayElement is true
+            @overlayElement = @options.overlayElement
+
+      # Exception
+      if isElement @container is false
+        throw new SwitchSlideException '✖ Container must be an HTMLElement'
 
       # Keyboard
       @keyCodes =
@@ -217,7 +260,7 @@
 
     # Is open?
     isOpen: ->
-      isOpen = classie.has @modal, @options.openClass
+      isOpen = classie.has @modal, @options.selectors.fxOpen
       return isOpen
 
     destroy: ->
