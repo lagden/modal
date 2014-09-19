@@ -21,23 +21,6 @@
     a[prop] = b[prop] for prop of b
     return a
 
-  # http://youmightnotneedjquery.com/
-  deepExtend = (out) ->
-    out = out or {}
-    i = 1
-
-    while i < arguments.length
-      obj = arguments[i]
-      continue unless obj
-      for key of obj
-        if obj.hasOwnProperty key
-          if typeof obj[key] is "object"
-            deepExtend out[key], obj[key]
-          else
-            out[key] = obj[key]
-      i++
-    return out
-
   # http://stackoverflow.com/a/384380/182183
   isElement = (obj) ->
     if typeof HTMLElement is "object"
@@ -88,17 +71,6 @@
             <div class="{box}">{content}</div>
           </div>'
 
-      getContent: (c) ->
-        return c.innerHTML if isElement c
-
-        try
-          out = document.querySelector c if typeof c == 'string'
-          return out.innerHTML
-        catch err
-          # ...
-
-        return c
-
       overlay: (add = false)->
         if @overlayElement isnt null
           method = if add then 'add' else 'remove'
@@ -128,7 +100,7 @@
         @closeTrigger = true
 
         if @isOpen() is true
-          classie.remove @modal, @options.selectors.fxOpen
+          classie.remove @modal, @options.fxOpen
 
           # Fallback transitionend
           @handlers.end null if @transitionend is false
@@ -143,7 +115,7 @@
           if typeof @options.beforeOpen == 'function'
             @options.beforeOpen @modal, @closeHandler, @box
 
-          classie.add @modal, @options.selectors.fxOpen
+          classie.add @modal, @options.fxOpen
           _p.overlay.call @, true
           _p.overflow.call @, true
 
@@ -165,31 +137,43 @@
 
       # Options
       @options =
-        esc             : true
-        template        : _p.getTemplate
-        content         : ''
-        beforeOpen      : null
-        overlayClass    : 'modalWidget--overlay'
-        overlayElement  : null
-        useOverflow     : true
-        selectors       :
-          widget  : 'modalWidget'
-          modal   : "modalWidget#{id}"
-          close   : 'modalWidget__close'
-          box     : 'modalWidget__box'
-          fx      : 'modalWidget-slidedown'
-          fxOpen  : 'modalWidget-slidedown--open'
+        esc            : true
+        template       : _p.getTemplate
+        content        : ''
+        beforeOpen     : null
+        overlayClass   : 'modalWidget--overlay'
+        overlayElement : null
+        useOverflow    : true
+        widget         : 'modalWidget'
+        modal          : "modalWidget#{id}"
+        close          : 'modalWidget__close'
+        box            : 'modalWidget__box'
+        fx             : 'modalWidget-slidedown'
+        fxOpen         : 'modalWidget-slidedown--open'
 
-      deepExtend @options, options
+      extend @options, options
+
+      # Content
+      @content = null
+      contentIsStr = false
+
+      if typeof @options.content == 'string'
+        try
+          @content = document.querySelector @options.content
+        catch err
+          @content = @options.content
+          contentIsStr = true
+      else
+        @content = @options.content if isElement @options.content
 
       # Template
       r =
-        'content' : _p.getContent @options.content
-        'id'      : @options.selectors.modal
-        'widget'  : @options.selectors.widget
-        'close'   : @options.selectors.close
-        'box'     : @options.selectors.box
-        'fx'      : @options.selectors.fx
+        'content' : if contentIsStr then @content else ''
+        'id'      : @options.modal
+        'widget'  : @options.widget
+        'close'   : @options.close
+        'box'     : @options.box
+        'fx'      : @options.fx
 
       render = @options.template().replace /\{(.*?)\}/g, (a, b) ->
         return r[b]
@@ -197,14 +181,19 @@
       # Add on DOM
       docBody.insertAdjacentHTML 'beforeend', render
 
+
       # Nullable
       r =
       render = null
 
       # Elements
-      @modal        = docBody.querySelector ".#{@options.selectors.modal}"
-      @closeHandler = @modal.querySelector ".#{@options.selectors.close}"
-      @box          = @modal.querySelector ".#{@options.selectors.box}"
+      @modal        = docBody.querySelector ".#{@options.modal}"
+      @closeHandler = @modal.querySelector ".#{@options.close}"
+      @box          = @modal.querySelector ".#{@options.box}"
+
+      # Move content
+      if contentIsStr is false
+        @box.appendChild(@content);
 
       # Overlay
       @overlayElement = null
@@ -260,7 +249,7 @@
 
     # Is open?
     isOpen: ->
-      isOpen = classie.has @modal, @options.selectors.fxOpen
+      isOpen = classie.has @modal, @options.fxOpen
       return isOpen
 
     destroy: ->

@@ -35,7 +35,7 @@
       <h1>Example</h1>
       <button id="ex1" type="button">Abre o modal</button>
       <button id="ex2" type="button">Abre o modal2</button>
-      <div id="modalContent" class="hidden">Esse é um exemplo do modal...</div>
+      <div id="modalContent">Esse é um exemplo do modal...</div>
       <p>make scroll</p>
       <p>make scroll</p>
       <p>make scroll</p>
@@ -154,9 +154,7 @@
       var modal = new Modal({
           content: '#modalContent',
           overlayElement: '.container',
-          selectors: {
-              widget: 'modalWidget modalWidget--base'
-          },
+          widget: 'modalWidget modalWidget--base',
           beforeOpen: function(modal, close, content) {
               classie.add(content, 'alterado');
           }

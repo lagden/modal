@@ -7,7 +7,7 @@
     }
   })(this, function(classie, EventEmitter) {
     'use strict';
-    var GUID, Modal, deepExtend, docBody, extend, isElement, removeAllChildren, transitionend, whichTransitionEnd;
+    var GUID, Modal, docBody, extend, isElement, removeAllChildren, transitionend, whichTransitionEnd;
     docBody = document.querySelector('body');
     extend = function(a, b) {
       var prop;
@@ -15,28 +15,6 @@
         a[prop] = b[prop];
       }
       return a;
-    };
-    deepExtend = function(out) {
-      var i, key, obj;
-      out = out || {};
-      i = 1;
-      while (i < arguments.length) {
-        obj = arguments[i];
-        if (!obj) {
-          continue;
-        }
-        for (key in obj) {
-          if (obj.hasOwnProperty(key)) {
-            if (typeof obj[key] === "object") {
-              deepExtend(out[key], obj[key]);
-            } else {
-              out[key] = obj[key];
-            }
-          }
-        }
-        i++;
-      }
-      return out;
     };
     isElement = function(obj) {
       if (typeof HTMLElement === "object") {
@@ -81,21 +59,6 @@
         getTemplate: function() {
           return '<div tabindex="0" class="{widget} {fx} {id}"> <div class="{close}"></div> <div class="{box}">{content}</div> </div>';
         },
-        getContent: function(c) {
-          var err, out;
-          if (isElement(c)) {
-            return c.innerHTML;
-          }
-          try {
-            if (typeof c === 'string') {
-              out = document.querySelector(c);
-            }
-            return out.innerHTML;
-          } catch (_error) {
-            err = _error;
-          }
-          return c;
-        },
         overlay: function(add) {
           var method;
           if (add == null) {
@@ -136,7 +99,7 @@
         onClose: function(event) {
           this.closeTrigger = true;
           if (this.isOpen() === true) {
-            classie.remove(this.modal, this.options.selectors.fxOpen);
+            classie.remove(this.modal, this.options.fxOpen);
             if (this.transitionend === false) {
               this.handlers.end(null);
             }
@@ -149,7 +112,7 @@
             if (typeof this.options.beforeOpen === 'function') {
               this.options.beforeOpen(this.modal, this.closeHandler, this.box);
             }
-            classie.add(this.modal, this.options.selectors.fxOpen);
+            classie.add(this.modal, this.options.fxOpen);
             _p.overlay.call(this, true);
             _p.overflow.call(this, true);
             this.modal.focus();
@@ -166,7 +129,7 @@
       };
 
       function Modal(options) {
-        var id, r, render;
+        var contentIsStr, err, id, r, render;
         if (options == null) {
           options = {};
         }
@@ -179,32 +142,48 @@
           overlayClass: 'modalWidget--overlay',
           overlayElement: null,
           useOverflow: true,
-          selectors: {
-            widget: 'modalWidget',
-            modal: "modalWidget" + id,
-            close: 'modalWidget__close',
-            box: 'modalWidget__box',
-            fx: 'modalWidget-slidedown',
-            fxOpen: 'modalWidget-slidedown--open'
-          }
+          widget: 'modalWidget',
+          modal: "modalWidget" + id,
+          close: 'modalWidget__close',
+          box: 'modalWidget__box',
+          fx: 'modalWidget-slidedown',
+          fxOpen: 'modalWidget-slidedown--open'
         };
-        deepExtend(this.options, options);
+        extend(this.options, options);
+        this.content = null;
+        contentIsStr = false;
+        if (typeof this.options.content === 'string') {
+          try {
+            this.content = document.querySelector(this.options.content);
+          } catch (_error) {
+            err = _error;
+            this.content = this.options.content;
+            contentIsStr = true;
+          }
+        } else {
+          if (isElement(this.options.content)) {
+            this.content = this.options.content;
+          }
+        }
         r = {
-          'content': _p.getContent(this.options.content),
-          'id': this.options.selectors.modal,
-          'widget': this.options.selectors.widget,
-          'close': this.options.selectors.close,
-          'box': this.options.selectors.box,
-          'fx': this.options.selectors.fx
+          'content': contentIsStr ? this.content : '',
+          'id': this.options.modal,
+          'widget': this.options.widget,
+          'close': this.options.close,
+          'box': this.options.box,
+          'fx': this.options.fx
         };
         render = this.options.template().replace(/\{(.*?)\}/g, function(a, b) {
           return r[b];
         });
         docBody.insertAdjacentHTML('beforeend', render);
         r = render = null;
-        this.modal = docBody.querySelector("." + this.options.selectors.modal);
-        this.closeHandler = this.modal.querySelector("." + this.options.selectors.close);
-        this.box = this.modal.querySelector("." + this.options.selectors.box);
+        this.modal = docBody.querySelector("." + this.options.modal);
+        this.closeHandler = this.modal.querySelector("." + this.options.close);
+        this.box = this.modal.querySelector("." + this.options.box);
+        if (contentIsStr === false) {
+          this.box.appendChild(this.content);
+        }
         this.overlayElement = null;
         if (this.options.overlayElement !== null) {
           if (typeof this.options.overlayElement === 'string') {
@@ -253,7 +232,7 @@
 
       Modal.prototype.isOpen = function() {
         var isOpen;
-        isOpen = classie.has(this.modal, this.options.selectors.fxOpen);
+        isOpen = classie.has(this.modal, this.options.fxOpen);
         return isOpen;
       };
 
