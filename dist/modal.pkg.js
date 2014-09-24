@@ -5,7 +5,7 @@ It is a plugin to make select boxes much more user-friendly
 
 @author      Thiago Lagden <lagden [at] gmail.com>
 @copyright   2014 Thiago Lagden
-@version     0.3.3
+@version     0.3.4
 */
 
 /*!
@@ -799,13 +799,16 @@ if ( typeof define === 'function' && define.amd ) {
           useOverflow: true,
           overlayElement: null,
           overlayClass: 'modalWidget--overlay',
+          modal: null,
           widget: 'modalWidget',
-          modal: "modalWidget" + this.id,
           close: 'modalWidget__close',
           box: 'modalWidget__box',
           fx: 'modalWidget-slidedown',
           fxOpen: 'modalWidget-slidedown--open'
         };
+        if (this.options.modal === null) {
+          this.options.modal = "" + this.options.widget + this.id;
+        }
         extend(this.options, options);
         this.content = null;
         contentIsStr = false;

@@ -175,13 +175,16 @@
           useOverflow: true,
           overlayElement: null,
           overlayClass: 'modalWidget--overlay',
+          modal: null,
           widget: 'modalWidget',
-          modal: "modalWidget" + this.id,
           close: 'modalWidget__close',
           box: 'modalWidget__box',
           fx: 'modalWidget-slidedown',
           fxOpen: 'modalWidget-slidedown--open'
         };
+        if (this.options.modal === null) {
+          this.options.modal = "" + this.options.widget + this.id;
+        }
         extend(this.options, options);
         this.content = null;
         contentIsStr = false;

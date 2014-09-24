@@ -176,12 +176,14 @@
         useOverflow    : true
         overlayElement : null
         overlayClass   : 'modalWidget--overlay'
+        modal          : null
         widget         : 'modalWidget'
-        modal          : "modalWidget#{@id}"
         close          : 'modalWidget__close'
         box            : 'modalWidget__box'
         fx             : 'modalWidget-slidedown'
         fxOpen         : 'modalWidget-slidedown--open'
+
+      @options.modal = "#{@options.widget}#{@id}" if @options.modal is null
 
       extend @options, options
 
