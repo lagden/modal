@@ -3,12 +3,14 @@
     define [
         'classie/classie'
         'eventEmitter/EventEmitter'
+        'get-style-property/get-style-property'
       ], factory
   else
     root.Modal = factory root.classie,
-                         root.EventEmitter
+                         root.EventEmitter,
+                         root.getStyleProperty
   return
-) @, (classie, EventEmitter) ->
+) @, (classie, EventEmitter, getStyleProperty) ->
 
   'use strict'
 
@@ -56,6 +58,9 @@
   # Transition property cross-browser
   transitionend = whichTransitionEnd()
 
+  # Transform property cross-browser
+  transformProperty = getStyleProperty 'transform'
+
   # Globally unique identifiers
   GUID = 0
 
@@ -93,6 +98,7 @@
               left     : 0
               width    : '100%'
               height   : '100%'
+            styles[transformProperty] = 'translate3d(0, 0, 0)'
             for k, v of styles
               docBody.style[k] = v
           else
@@ -104,6 +110,7 @@
               left     : ''
               width    : ''
               height   : ''
+            styles[transformProperty] = ''
             for k, v of styles
               docBody.style[k] = v
         return

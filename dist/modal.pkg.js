@@ -5,7 +5,7 @@ It is a plugin to make select boxes much more user-friendly
 
 @author      Thiago Lagden <lagden [at] gmail.com>
 @copyright   2014 Thiago Lagden
-@version     0.3.1
+@version     0.3.3
 */
 
 /*!
@@ -567,16 +567,71 @@ if ( typeof define === 'function' && define.amd ) {
 	}
 }.call(this));
 
+/*!
+ * getStyleProperty v1.0.3
+ * original by kangax
+ * http://perfectionkills.com/feature-testing-css-properties/
+ */
+
+/*jshint browser: true, strict: true, undef: true */
+/*global define: false, exports: false, module: false */
+
+( function( window ) {
+
+'use strict';
+
+var prefixes = 'Webkit Moz ms Ms O'.split(' ');
+var docElemStyle = document.documentElement.style;
+
+function getStyleProperty( propName ) {
+  if ( !propName ) {
+    return;
+  }
+
+  // test standard property first
+  if ( typeof docElemStyle[ propName ] === 'string' ) {
+    return propName;
+  }
+
+  // capitalize
+  propName = propName.charAt(0).toUpperCase() + propName.slice(1);
+
+  // test vendor specific properties
+  var prefixed;
+  for ( var i=0, len = prefixes.length; i < len; i++ ) {
+    prefixed = prefixes[i] + propName;
+    if ( typeof docElemStyle[ prefixed ] === 'string' ) {
+      return prefixed;
+    }
+  }
+}
+
+// transport
+if ( typeof define === 'function' && define.amd ) {
+  // AMD
+  define( function() {
+    return getStyleProperty;
+  });
+} else if ( typeof exports === 'object' ) {
+  // CommonJS for Component
+  module.exports = getStyleProperty;
+} else {
+  // browser global
+  window.getStyleProperty = getStyleProperty;
+}
+
+})( window );
+
 (function() {
   (function(root, factory) {
     if (typeof define === "function" && define.amd) {
-      define(['classie/classie', 'eventEmitter/EventEmitter'], factory);
+      define(['classie/classie', 'eventEmitter/EventEmitter', 'get-style-property/get-style-property'], factory);
     } else {
-      root.Modal = factory(root.classie, root.EventEmitter);
+      root.Modal = factory(root.classie, root.EventEmitter, root.getStyleProperty);
     }
-  })(this, function(classie, EventEmitter) {
+  })(this, function(classie, EventEmitter, getStyleProperty) {
     'use strict';
-    var GUID, Modal, docBody, extend, isElement, removeAllChildren, transitionend, whichTransitionEnd;
+    var GUID, Modal, docBody, extend, isElement, removeAllChildren, transformProperty, transitionend, whichTransitionEnd;
     docBody = document.querySelector('body');
     extend = function(a, b) {
       var prop;
@@ -620,6 +675,7 @@ if ( typeof define === 'function' && define.amd ) {
       return el;
     };
     transitionend = whichTransitionEnd();
+    transformProperty = getStyleProperty('transform');
     GUID = 0;
     Modal = (function() {
       var _handlers, _p;
@@ -657,6 +713,7 @@ if ( typeof define === 'function' && define.amd ) {
                 width: '100%',
                 height: '100%'
               };
+              styles[transformProperty] = 'translate3d(0, 0, 0)';
               for (k in styles) {
                 v = styles[k];
                 docBody.style[k] = v;
@@ -671,6 +728,7 @@ if ( typeof define === 'function' && define.amd ) {
                 width: '',
                 height: ''
               };
+              styles[transformProperty] = '';
               for (k in styles) {
                 v = styles[k];
                 docBody.style[k] = v;

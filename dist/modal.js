@@ -1,13 +1,13 @@
 (function() {
   (function(root, factory) {
     if (typeof define === "function" && define.amd) {
-      define(['classie/classie', 'eventEmitter/EventEmitter'], factory);
+      define(['classie/classie', 'eventEmitter/EventEmitter', 'get-style-property/get-style-property'], factory);
     } else {
-      root.Modal = factory(root.classie, root.EventEmitter);
+      root.Modal = factory(root.classie, root.EventEmitter, root.getStyleProperty);
     }
-  })(this, function(classie, EventEmitter) {
+  })(this, function(classie, EventEmitter, getStyleProperty) {
     'use strict';
-    var GUID, Modal, docBody, extend, isElement, removeAllChildren, transitionend, whichTransitionEnd;
+    var GUID, Modal, docBody, extend, isElement, removeAllChildren, transformProperty, transitionend, whichTransitionEnd;
     docBody = document.querySelector('body');
     extend = function(a, b) {
       var prop;
@@ -51,6 +51,7 @@
       return el;
     };
     transitionend = whichTransitionEnd();
+    transformProperty = getStyleProperty('transform');
     GUID = 0;
     Modal = (function() {
       var _handlers, _p;
@@ -88,6 +89,7 @@
                 width: '100%',
                 height: '100%'
               };
+              styles[transformProperty] = 'translate3d(0, 0, 0)';
               for (k in styles) {
                 v = styles[k];
                 docBody.style[k] = v;
@@ -102,6 +104,7 @@
                 width: '',
                 height: ''
               };
+              styles[transformProperty] = '';
               for (k in styles) {
                 v = styles[k];
                 docBody.style[k] = v;
