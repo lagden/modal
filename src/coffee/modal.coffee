@@ -71,16 +71,41 @@
             <div class="{box}">{content}</div>
           </div>'
 
-      overlay: (add = false)->
+      overlay: (add = false) ->
         if @overlayElement isnt null
           method = if add then 'add' else 'remove'
           classie[method] @overlayElement, @options.overlayClass
         return
 
-      overflow: (hidden = false)->
-        if @options.useOverflow
-          v = if hidden then 'hidden' else 'visible'
-          docBody.style.overflow = v
+      overflow: (hidden = false) ->
+        overflowId = +docBody.getAttribute('data-overflow')
+        overflowId = overflowId || @id
+        if @options.useOverflow and overflowId == @id
+
+          styles = {}
+
+          if hidden
+            docBody.setAttribute('data-overflow', @id)
+            styles =
+              overflow : 'hidden'
+              position : 'fixed'
+              top      : 0
+              left     : 0
+              width    : '100%'
+              height   : '100%'
+            for k, v of styles
+              docBody.style[k] = v
+          else
+            docBody.removeAttribute('data-overflow')
+            styles =
+              overflow : ''
+              position : ''
+              top      : ''
+              left     : ''
+              width    : ''
+              height   : ''
+            for k, v of styles
+              docBody.style[k] = v
         return
 
     # Event handler
@@ -133,7 +158,7 @@
     constructor: (options = {}) ->
 
       # Globally unique identifiers
-      id = ++GUID
+      @id = ++GUID
 
       # Options
       @options =
@@ -141,11 +166,11 @@
         template       : _p.getTemplate
         content        : ''
         beforeOpen     : null
-        overlayClass   : 'modalWidget--overlay'
-        overlayElement : null
         useOverflow    : true
+        overlayElement : null
+        overlayClass   : 'modalWidget--overlay'
         widget         : 'modalWidget'
-        modal          : "modalWidget#{id}"
+        modal          : "modalWidget#{@id}"
         close          : 'modalWidget__close'
         box            : 'modalWidget__box'
         fx             : 'modalWidget-slidedown'
@@ -178,9 +203,8 @@
       render = @options.template().replace /\{(.*?)\}/g, (a, b) ->
         return r[b]
 
-      # Add on DOM
+      # Add widget on DOM
       docBody.insertAdjacentHTML 'beforeend', render
-
 
       # Nullable
       r =
@@ -204,10 +228,6 @@
           if isElement @options.overlayElement is true
             @overlayElement = @options.overlayElement
 
-      # Exception
-      if isElement @container is false
-        throw new SwitchSlideException '✖ Container must be an HTMLElement'
-
       # Keyboard
       @keyCodes =
         'esc': 27
@@ -221,6 +241,7 @@
 
       # Listeners
       @closeHandler.addEventListener 'click', @handlers.close, false
+      @closeHandler.addEventListener 'touchstart', @handlers.close, false
 
       @transitionend = false
       @transitionend = true if typeof transitionend isnt 'undefined'
@@ -263,7 +284,7 @@
         if @options.esc is true
           @modal.removeEventListener 'keyup', @handlers.keyup, false
 
-        # Remove Elements from DOM
+        # Remove all elements
         docBody.removeChild removeAllChildren(@modal)
 
         @destroyed = true

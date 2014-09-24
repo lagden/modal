@@ -9,7 +9,9 @@ html(lang='en')
         link(rel='stylesheet', type='text/css', href='modal.css')
         style.
             body {
-                background: gray
+                background: gray;
+                -webkit-overflow-scrolling: touch;
+                overflow-y: scroll;
             }
 
             .mar-b-20 {
@@ -25,6 +27,9 @@ html(lang='en')
                 width: 60%;
                 height: 60%;
                 background-color: green;
+
+                -webkit-overflow-scrolling: touch;
+                overflow-y: scroll;
             }
 
     title Example
@@ -35,6 +40,8 @@ html(lang='en')
             button#ex2(type='button') Abre o modal2
             #modalContent
                 | Esse é um exemplo do modal...
+                a(href="#xxx") link
+                | <p>aqwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p><p>qwerty</p>
             - var n = 0
             while n < 100
                 - n++

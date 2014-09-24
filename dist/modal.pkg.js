@@ -639,13 +639,43 @@ if ( typeof define === 'function' && define.amd ) {
           }
         },
         overflow: function(hidden) {
-          var v;
+          var k, overflowId, styles, v;
           if (hidden == null) {
             hidden = false;
           }
-          if (this.options.useOverflow) {
-            v = hidden ? 'hidden' : 'visible';
-            docBody.style.overflow = v;
+          overflowId = +docBody.getAttribute('data-overflow');
+          overflowId = overflowId || this.id;
+          if (this.options.useOverflow && overflowId === this.id) {
+            styles = {};
+            if (hidden) {
+              docBody.setAttribute('data-overflow', this.id);
+              styles = {
+                overflow: 'hidden',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%'
+              };
+              for (k in styles) {
+                v = styles[k];
+                docBody.style[k] = v;
+              }
+            } else {
+              docBody.removeAttribute('data-overflow');
+              styles = {
+                overflow: '',
+                position: '',
+                top: '',
+                left: '',
+                width: '',
+                height: ''
+              };
+              for (k in styles) {
+                v = styles[k];
+                docBody.style[k] = v;
+              }
+            }
           }
         }
       };
@@ -698,21 +728,21 @@ if ( typeof define === 'function' && define.amd ) {
       };
 
       function Modal(options) {
-        var contentIsStr, err, id, r, render;
+        var contentIsStr, err, r, render;
         if (options == null) {
           options = {};
         }
-        id = ++GUID;
+        this.id = ++GUID;
         this.options = {
           esc: true,
           template: _p.getTemplate,
           content: '',
           beforeOpen: null,
-          overlayClass: 'modalWidget--overlay',
-          overlayElement: null,
           useOverflow: true,
+          overlayElement: null,
+          overlayClass: 'modalWidget--overlay',
           widget: 'modalWidget',
-          modal: "modalWidget" + id,
+          modal: "modalWidget" + this.id,
           close: 'modalWidget__close',
           box: 'modalWidget__box',
           fx: 'modalWidget-slidedown',
@@ -763,9 +793,6 @@ if ( typeof define === 'function' && define.amd ) {
             }
           }
         }
-        if (isElement(this.container === false)) {
-          throw new SwitchSlideException('✖ Container must be an HTMLElement');
-        }
         this.keyCodes = {
           'esc': 27
         };
@@ -776,6 +803,7 @@ if ( typeof define === 'function' && define.amd ) {
           'end': _handlers.onTransitionEnd.bind(this)
         };
         this.closeHandler.addEventListener('click', this.handlers.close, false);
+        this.closeHandler.addEventListener('touchstart', this.handlers.close, false);
         this.transitionend = false;
         if (typeof transitionend !== 'undefined') {
           this.transitionend = true;
