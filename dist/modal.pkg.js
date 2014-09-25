@@ -5,7 +5,7 @@ It is a plugin to make select boxes much more user-friendly
 
 @author      Thiago Lagden <lagden [at] gmail.com>
 @copyright   2014 Thiago Lagden
-@version     0.3.4
+@version     0.3.5
 */
 
 /*!
@@ -631,8 +631,53 @@ if ( typeof define === 'function' && define.amd ) {
     }
   })(this, function(classie, EventEmitter, getStyleProperty) {
     'use strict';
-    var GUID, Modal, docBody, extend, isElement, removeAllChildren, transformProperty, transitionend, whichTransitionEnd;
+    var GUID, Modal, docBody, extend, injectElementWithStyles, isElement, isTouch, mod, prefixes, removeAllChildren, scrollX, scrollY, transformProperty, transitionend, whichTransitionEnd;
     docBody = document.querySelector('body');
+    scrollX = function() {
+      return window.scrollX || window.pageXOffset;
+    };
+    scrollY = function() {
+      return window.scrollY || window.pageYOffset;
+    };
+    mod = 'modernizr';
+    prefixes = '-webkit- -moz- -o- -ms- '.split(' ');
+    injectElementWithStyles = function(rule, callback) {
+      var body, div, docOverflow, fakeBody, ret, style;
+      div = document.createElement('div');
+      body = document.body;
+      fakeBody = body || document.createElement('body');
+      style = ['&#173;', '<style id="s', mod, '">', rule, '</style>'].join('');
+      div.id = mod;
+      (body ? div : fakeBody).innerHTML += style;
+      fakeBody.appendChild(div);
+      if (!body) {
+        fakeBody.style.background = '';
+        fakeBody.style.overflow = 'hidden';
+        docOverflow = docElement.style.overflow;
+        docElement.style.overflow = 'hidden';
+        docElement.appendChild(fakeBody);
+      }
+      ret = callback(div, rule);
+      if (!body) {
+        fakeBody.parentNode.removeChild(fakeBody);
+        docElement.style.overflow = docOverflow;
+      } else {
+        div.parentNode.removeChild(div);
+      }
+      return !!ret;
+    };
+    isTouch = function() {
+      var bool;
+      bool = false;
+      if (('ontouchstart' in window) || (window.DocumentTouch && document instanceof DocumentTouch)) {
+        bool = true;
+      } else {
+        injectElementWithStyles(['@media (', prefixes.join('touch-enabled),('), mod, ')', '{#modernizr{top:9px;position:absolute}}'].join(''), function(node) {
+          bool = node.offsetTop === 9;
+        });
+      }
+      return bool;
+    };
     extend = function(a, b) {
       var prop;
       for (prop in b) {
@@ -695,44 +740,47 @@ if ( typeof define === 'function' && define.amd ) {
           }
         },
         overflow: function(hidden) {
-          var k, overflowId, styles, v;
+          var k, preventScrollId, styles, v;
           if (hidden == null) {
             hidden = false;
           }
-          overflowId = +docBody.getAttribute('data-overflow');
-          overflowId = overflowId || this.id;
-          if (this.options.useOverflow && overflowId === this.id) {
+          preventScrollId = +docBody.getAttribute('data-prevent');
+          preventScrollId = preventScrollId || this.id;
+          if (this.options.preventScroll && preventScrollId === this.id) {
             styles = {};
             if (hidden) {
-              docBody.setAttribute('data-overflow', this.id);
-              styles = {
-                overflow: 'hidden',
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%'
-              };
-              styles[transformProperty] = 'translate3d(0, 0, 0)';
+              docBody.setAttribute('data-prevent', this.id);
+              this.scrollY = scrollY();
+              this.scrollX = scrollX();
+              styles.overflow = 'hidden';
+              if (isTouch()) {
+                styles[transformProperty] = 'translate3d(0, 0, 0)';
+                styles.position = 'fixed';
+                styles.top = 0;
+                styles.left = 0;
+                styles.width = '100%';
+                styles.height = '100%';
+              }
               for (k in styles) {
                 v = styles[k];
                 docBody.style[k] = v;
               }
             } else {
-              docBody.removeAttribute('data-overflow');
-              styles = {
-                overflow: '',
-                position: '',
-                top: '',
-                left: '',
-                width: '',
-                height: ''
-              };
-              styles[transformProperty] = '';
+              docBody.removeAttribute('data-prevent');
+              styles.overflow = '';
+              if (isTouch()) {
+                styles[transformProperty] = '';
+                styles.position = '';
+                styles.top = '';
+                styles.left = '';
+                styles.width = '';
+                styles.height = '';
+              }
               for (k in styles) {
                 v = styles[k];
                 docBody.style[k] = v;
               }
+              window.scrollTo(this.scrollX, this.scrollY);
             }
           }
         }
@@ -791,12 +839,13 @@ if ( typeof define === 'function' && define.amd ) {
           options = {};
         }
         this.id = ++GUID;
+        this.scrollY = this.scrollX = 0;
         this.options = {
           esc: true,
           template: _p.getTemplate,
           content: '',
           beforeOpen: null,
-          useOverflow: true,
+          preventScroll: true,
           overlayElement: null,
           overlayClass: 'modalWidget--overlay',
           modal: null,

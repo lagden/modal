@@ -17,6 +17,64 @@
   # document.body
   docBody = document.querySelector 'body'
 
+  # scroll position
+  scrollX = -> return window.scrollX || window.pageXOffset
+  scrollY = -> return window.scrollY || window.pageYOffset
+
+  # Modernizr - touch test
+  mod = 'modernizr'
+
+  prefixes = '-webkit- -moz- -o- -ms- '.split(' ')
+
+  injectElementWithStyles = (rule, callback) ->
+    div = document.createElement('div')
+    body = document.body
+    fakeBody = body or document.createElement('body')
+    style = [
+      '&#173;'
+      '<style id="s'
+      mod
+      '">'
+      rule
+      '</style>'
+    ].join('')
+    div.id = mod
+    ((if body then div else fakeBody)).innerHTML += style
+
+    fakeBody.appendChild div
+
+    unless body
+      fakeBody.style.background = ''
+      fakeBody.style.overflow = 'hidden'
+      docOverflow = docElement.style.overflow
+      docElement.style.overflow = 'hidden'
+      docElement.appendChild fakeBody
+
+    ret = callback(div, rule)
+    unless body
+      fakeBody.parentNode.removeChild fakeBody
+      docElement.style.overflow = docOverflow
+    else
+      div.parentNode.removeChild div
+    return !!ret
+
+  isTouch = ->
+    bool = false
+    if ('ontouchstart' of window) or
+       (window.DocumentTouch and document instanceof DocumentTouch)
+      bool = true
+    else
+      injectElementWithStyles [
+        '@media ('
+        prefixes.join('touch-enabled),(')
+        mod
+        ')'
+        '{#modernizr{top:9px;position:absolute}}'
+      ].join(''), (node) ->
+        bool = node.offsetTop is 9
+        return
+    return bool
+
   # Extend object
   # https://github.com/desandro/draggabilly/blob/master/draggabilly.js#L17
   extend = (a, b) ->
@@ -83,36 +141,47 @@
         return
 
       overflow: (hidden = false) ->
-        overflowId = +docBody.getAttribute('data-overflow')
-        overflowId = overflowId || @id
-        if @options.useOverflow and overflowId == @id
+        preventScrollId = +docBody.getAttribute('data-prevent')
+        preventScrollId = preventScrollId || @id
+        if @options.preventScroll and preventScrollId == @id
 
           styles = {}
 
           if hidden
-            docBody.setAttribute('data-overflow', @id)
-            styles =
-              overflow : 'hidden'
-              position : 'fixed'
-              top      : 0
-              left     : 0
-              width    : '100%'
-              height   : '100%'
-            styles[transformProperty] = 'translate3d(0, 0, 0)'
+            docBody.setAttribute('data-prevent', @id)
+
+            @scrollY = scrollY()
+            @scrollX = scrollX()
+
+            styles.overflow = 'hidden'
+
+            if isTouch()
+              styles[transformProperty] = 'translate3d(0, 0, 0)'
+              styles.position           = 'fixed'
+              styles.top                = 0
+              styles.left               = 0
+              styles.width              = '100%'
+              styles.height             = '100%'
+
             for k, v of styles
               docBody.style[k] = v
           else
-            docBody.removeAttribute('data-overflow')
-            styles =
-              overflow : ''
-              position : ''
-              top      : ''
-              left     : ''
-              width    : ''
-              height   : ''
-            styles[transformProperty] = ''
+            docBody.removeAttribute('data-prevent')
+
+            styles.overflow = ''
+
+            if isTouch()
+              styles[transformProperty] = ''
+              styles.position           = ''
+              styles.top                = ''
+              styles.left               = ''
+              styles.width              = ''
+              styles.height             = ''
+
             for k, v of styles
               docBody.style[k] = v
+
+            window.scrollTo @scrollX, @scrollY
         return
 
     # Event handler
@@ -167,13 +236,15 @@
       # Globally unique identifiers
       @id = ++GUID
 
+      @scrollY = @scrollX = 0
+
       # Options
       @options =
         esc            : true
         template       : _p.getTemplate
         content        : ''
         beforeOpen     : null
-        useOverflow    : true
+        preventScroll  : true
         overlayElement : null
         overlayClass   : 'modalWidget--overlay'
         modal          : null
