@@ -65,9 +65,6 @@
   # Transition property cross-browser
   transitionend = whichTransitionEnd()
 
-  # Transform property cross-browser
-  transformProperty = getStyleProperty 'transform'
-
   # Globally unique identifiers
   GUID = 0
 

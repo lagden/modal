@@ -631,7 +631,7 @@ if ( typeof define === 'function' && define.amd ) {
     }
   })(this, function(classie, EventEmitter) {
     'use strict';
-    var $, GUID, Modal, docBody, docHtml, extend, isElement, removeAllChildren, scrollX, scrollY, transformProperty, transitionend, whichTransitionEnd;
+    var $, GUID, Modal, docBody, docHtml, extend, isElement, removeAllChildren, scrollX, scrollY, transitionend, whichTransitionEnd;
     $ = document.querySelector.bind(document);
     docHtml = $('html');
     docBody = document.body || $('body');
@@ -683,7 +683,6 @@ if ( typeof define === 'function' && define.amd ) {
       return el;
     };
     transitionend = whichTransitionEnd();
-    transformProperty = getStyleProperty('transform');
     GUID = 0;
     Modal = (function() {
       var _handlers, _p;
