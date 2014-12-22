@@ -1,3 +1,5 @@
+'use strict'
+
 random = require 'random-js'
 serverPort = random().integer 8200, 8500
 
@@ -9,9 +11,9 @@ module.exports = (grunt) ->
     pkg: grunt.file.readJSON "package.json"
     comments: """
 /*
-qCombo.js
+modal.js
 
-It is a plugin to make select boxes much more user-friendly
+Modal everywhere
 
 @author      Thiago Lagden <lagden [at] gmail.com>
 @copyright   <%= grunt.template.today('yyyy') %> Thiago Lagden

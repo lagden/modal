@@ -1,58 +1,21 @@
 (function() {
   (function(root, factory) {
     if (typeof define === "function" && define.amd) {
-      define(['classie/classie', 'eventEmitter/EventEmitter', 'get-style-property/get-style-property'], factory);
+      define(['classie/classie', 'eventEmitter/EventEmitter'], factory);
     } else {
-      root.Modal = factory(root.classie, root.EventEmitter, root.getStyleProperty);
+      root.Modal = factory(root.classie, root.EventEmitter);
     }
-  })(this, function(classie, EventEmitter, getStyleProperty) {
+  })(this, function(classie, EventEmitter) {
     'use strict';
-    var GUID, Modal, docBody, extend, injectElementWithStyles, isElement, isTouch, mod, prefixes, removeAllChildren, scrollX, scrollY, transformProperty, transitionend, whichTransitionEnd;
-    docBody = document.querySelector('body');
+    var $, GUID, Modal, docBody, docHtml, extend, isElement, removeAllChildren, scrollX, scrollY, transformProperty, transitionend, whichTransitionEnd;
+    $ = document.querySelector.bind(document);
+    docHtml = $('html');
+    docBody = document.body || $('body');
     scrollX = function() {
       return window.scrollX || window.pageXOffset;
     };
     scrollY = function() {
       return window.scrollY || window.pageYOffset;
-    };
-    mod = 'modernizr';
-    prefixes = '-webkit- -moz- -o- -ms- '.split(' ');
-    injectElementWithStyles = function(rule, callback) {
-      var body, div, docOverflow, fakeBody, ret, style;
-      div = document.createElement('div');
-      body = document.body;
-      fakeBody = body || document.createElement('body');
-      style = ['&#173;', '<style id="s', mod, '">', rule, '</style>'].join('');
-      div.id = mod;
-      (body ? div : fakeBody).innerHTML += style;
-      fakeBody.appendChild(div);
-      if (!body) {
-        fakeBody.style.background = '';
-        fakeBody.style.overflow = 'hidden';
-        docOverflow = docElement.style.overflow;
-        docElement.style.overflow = 'hidden';
-        docElement.appendChild(fakeBody);
-      }
-      ret = callback(div, rule);
-      if (!body) {
-        fakeBody.parentNode.removeChild(fakeBody);
-        docElement.style.overflow = docOverflow;
-      } else {
-        div.parentNode.removeChild(div);
-      }
-      return !!ret;
-    };
-    isTouch = function() {
-      var bool;
-      bool = false;
-      if (('ontouchstart' in window) || (window.DocumentTouch && document instanceof DocumentTouch)) {
-        bool = true;
-      } else {
-        injectElementWithStyles(['@media (', prefixes.join('touch-enabled),('), mod, ')', '{#modernizr{top:9px;position:absolute}}'].join(''), function(node) {
-          bool = node.offsetTop === 9;
-        });
-      }
-      return bool;
     };
     extend = function(a, b) {
       var prop;
@@ -116,48 +79,24 @@
           }
         },
         overflow: function(hidden) {
-          var k, preventScrollId, styles, v;
+          var method, preventScrollId;
           if (hidden == null) {
             hidden = false;
           }
           preventScrollId = +docBody.getAttribute('data-prevent');
           preventScrollId = preventScrollId || this.id;
+          method = hidden ? 'add' : 'remove';
           if (this.options.preventScroll && preventScrollId === this.id) {
-            styles = {};
             if (hidden) {
               docBody.setAttribute('data-prevent', this.id);
               this.scrollY = scrollY();
               this.scrollX = scrollX();
-              styles.overflow = 'hidden';
-              if (isTouch()) {
-                styles[transformProperty] = 'translate3d(0, 0, 0)';
-                styles.position = 'fixed';
-                styles.top = 0;
-                styles.left = 0;
-                styles.width = '100%';
-                styles.height = '100%';
-              }
-              for (k in styles) {
-                v = styles[k];
-                docBody.style[k] = v;
-              }
             } else {
               docBody.removeAttribute('data-prevent');
-              styles.overflow = '';
-              if (isTouch()) {
-                styles[transformProperty] = '';
-                styles.position = '';
-                styles.top = '';
-                styles.left = '';
-                styles.width = '';
-                styles.height = '';
-              }
-              for (k in styles) {
-                v = styles[k];
-                docBody.style[k] = v;
-              }
               window.scrollTo(this.scrollX, this.scrollY);
             }
+            classie[method](docHtml, this.options.htmlBodyOpen);
+            classie[method](docBody, this.options.htmlBodyOpen);
           }
         }
       };
@@ -229,7 +168,8 @@
           close: 'modalWidget__close',
           box: 'modalWidget__box',
           fx: 'modalWidget-slidedown',
-          fxOpen: 'modalWidget-slidedown--open'
+          fxOpen: 'modalWidget-slidedown--open',
+          htmlBodyOpen: 'modalWidget-htmlBody--open'
         };
         if (this.options.modal === null) {
           this.options.modal = "" + this.options.widget + this.id;
@@ -239,7 +179,7 @@
         contentIsStr = false;
         if (typeof this.options.content === 'string') {
           try {
-            this.content = document.querySelector(this.options.content);
+            this.content = $(this.options.content);
           } catch (_error) {
             err = _error;
             this.content = this.options.content;
@@ -272,7 +212,7 @@
         this.overlayElement = null;
         if (this.options.overlayElement !== null) {
           if (typeof this.options.overlayElement === 'string') {
-            this.overlayElement = document.querySelector(this.options.overlayElement);
+            this.overlayElement = $(this.options.overlayElement);
           } else {
             if (isElement(this.options.overlayElement === true)) {
               this.overlayElement = this.options.overlayElement;

@@ -3,77 +3,26 @@
     define [
         'classie/classie'
         'eventEmitter/EventEmitter'
-        'get-style-property/get-style-property'
       ], factory
   else
     root.Modal = factory root.classie,
-                         root.EventEmitter,
-                         root.getStyleProperty
+                         root.EventEmitter
   return
-) @, (classie, EventEmitter, getStyleProperty) ->
+) @, (classie, EventEmitter) ->
 
   'use strict'
 
-  # document.body
-  docBody = document.querySelector 'body'
+  $ = document.querySelector.bind document
 
-  # scroll position
+  # document.html
+  docHtml = $ 'html'
+
+  # document.body
+  docBody = document.body || $ 'body'
+
+  # Scroll
   scrollX = -> return window.scrollX || window.pageXOffset
   scrollY = -> return window.scrollY || window.pageYOffset
-
-  # Modernizr - touch test
-  mod = 'modernizr'
-
-  prefixes = '-webkit- -moz- -o- -ms- '.split(' ')
-
-  injectElementWithStyles = (rule, callback) ->
-    div = document.createElement('div')
-    body = document.body
-    fakeBody = body or document.createElement('body')
-    style = [
-      '&#173;'
-      '<style id="s'
-      mod
-      '">'
-      rule
-      '</style>'
-    ].join('')
-    div.id = mod
-    ((if body then div else fakeBody)).innerHTML += style
-
-    fakeBody.appendChild div
-
-    unless body
-      fakeBody.style.background = ''
-      fakeBody.style.overflow = 'hidden'
-      docOverflow = docElement.style.overflow
-      docElement.style.overflow = 'hidden'
-      docElement.appendChild fakeBody
-
-    ret = callback(div, rule)
-    unless body
-      fakeBody.parentNode.removeChild fakeBody
-      docElement.style.overflow = docOverflow
-    else
-      div.parentNode.removeChild div
-    return !!ret
-
-  isTouch = ->
-    bool = false
-    if ('ontouchstart' of window) or
-       (window.DocumentTouch and document instanceof DocumentTouch)
-      bool = true
-    else
-      injectElementWithStyles [
-        '@media ('
-        prefixes.join('touch-enabled),(')
-        mod
-        ')'
-        '{#modernizr{top:9px;position:absolute}}'
-      ].join(''), (node) ->
-        bool = node.offsetTop is 9
-        return
-    return bool
 
   # Extend object
   # https://github.com/desandro/draggabilly/blob/master/draggabilly.js#L17
@@ -143,45 +92,21 @@
       overflow: (hidden = false) ->
         preventScrollId = +docBody.getAttribute('data-prevent')
         preventScrollId = preventScrollId || @id
-        if @options.preventScroll and preventScrollId == @id
+        method = if hidden then 'add' else 'remove'
 
-          styles = {}
+        if @options.preventScroll and preventScrollId == @id
 
           if hidden
             docBody.setAttribute('data-prevent', @id)
-
             @scrollY = scrollY()
             @scrollX = scrollX()
-
-            styles.overflow = 'hidden'
-
-            if isTouch()
-              styles[transformProperty] = 'translate3d(0, 0, 0)'
-              styles.position           = 'fixed'
-              styles.top                = 0
-              styles.left               = 0
-              styles.width              = '100%'
-              styles.height             = '100%'
-
-            for k, v of styles
-              docBody.style[k] = v
           else
             docBody.removeAttribute('data-prevent')
-
-            styles.overflow = ''
-
-            if isTouch()
-              styles[transformProperty] = ''
-              styles.position           = ''
-              styles.top                = ''
-              styles.left               = ''
-              styles.width              = ''
-              styles.height             = ''
-
-            for k, v of styles
-              docBody.style[k] = v
-
             window.scrollTo @scrollX, @scrollY
+
+          classie[method] docHtml, @options.htmlBodyOpen
+          classie[method] docBody, @options.htmlBodyOpen
+
         return
 
     # Event handler
@@ -253,6 +178,7 @@
         box            : 'modalWidget__box'
         fx             : 'modalWidget-slidedown'
         fxOpen         : 'modalWidget-slidedown--open'
+        htmlBodyOpen   : 'modalWidget-htmlBody--open'
 
       @options.modal = "#{@options.widget}#{@id}" if @options.modal is null
 
@@ -264,7 +190,7 @@
 
       if typeof @options.content == 'string'
         try
-          @content = document.querySelector @options.content
+          @content = $ @options.content
         catch err
           @content = @options.content
           contentIsStr = true
@@ -303,7 +229,7 @@
       @overlayElement = null
       if @options.overlayElement isnt null
         if typeof  @options.overlayElement is 'string'
-          @overlayElement = document.querySelector @options.overlayElement
+          @overlayElement = $ @options.overlayElement
         else
           if isElement @options.overlayElement is true
             @overlayElement = @options.overlayElement
