@@ -75,15 +75,17 @@
     _p =
       getTemplate: ->
         return '
-          <div tabindex="0" class="{widget} {fx} {id}">
+          <div tabindex="0" id="{id}" class="{widget} {hidden}">
             <div class="{close}"></div>
             <div class="{box}">{content}</div>
-          </div>'
+          </div>
+        '.trim()
 
       overlay: (add = false) ->
         if @overlayElement isnt null
           method = if add then 'add' else 'remove'
-          classie[method] @overlayElement, @options.overlayClass
+          for css in @options.overlay.split(' ')
+            classie[method] @overlayElement, css
         return
 
       overflow: (hidden = false) ->
@@ -101,8 +103,9 @@
             docBody.removeAttribute('data-prevent')
             window.scrollTo @scrollX, @scrollY
 
-          classie[method] docHtml, @options.htmlBodyOpen
-          classie[method] docBody, @options.htmlBodyOpen
+          for css in @options.htmlBodyOpen.split(' ')
+            classie[method] docHtml, css
+            classie[method] docBody, css
 
         return
 
@@ -123,7 +126,8 @@
         @closeTrigger = true
 
         if @isOpen() is true
-          classie.remove @modal, @options.fxOpen
+          for css in @options.visible.split(' ')
+            classie.remove @modal, css
 
           # Fallback transitionend
           @handlers.end null if @transitionend is false
@@ -138,7 +142,9 @@
           if typeof @options.beforeOpen == 'function'
             @options.beforeOpen @modal, @closeHandler, @box
 
-          classie.add @modal, @options.fxOpen
+          for css in @options.visible.split(' ')
+            classie.add @modal, css
+
           _p.overlay.call @, true
           _p.overflow.call @, true
 
@@ -168,18 +174,29 @@
         beforeOpen     : null
         preventScroll  : true
         overlayElement : null
-        overlayClass   : 'modalWidget--overlay'
-        modal          : null
-        widget         : 'modalWidget'
-        close          : 'modalWidget__close'
-        box            : 'modalWidget__box'
-        fx             : 'modalWidget-slidedown'
-        fxOpen         : 'modalWidget-slidedown--open'
-        htmlBodyOpen   : 'modalWidget-htmlBody--open'
-
-      @options.modal = "#{@options.widget}#{@id}" if @options.modal is null
+        overlay        : ''
+        widget         : ''
+        close          : ''
+        box            : ''
+        hidden         : ''
+        visible        : ''
+        htmlBodyOpen   : ''
 
       extend @options, options
+
+      @css =
+        overlay        : 'l-modal__overlay'
+        widget         : 'l-modal'
+        close          : 'l-modal__close'
+        box            : 'l-modal__box'
+        hidden         : 'l-modal_hidden'
+        visible        : 'l-modal_visible'
+        htmlBodyOpen   : 'l-modal__htmlBody'
+
+      @options.modal = "#{@css.widget}#{@id}"
+
+      for k, v of @css
+        @options[k] = "#{v} #{@options[k]}".trim()
 
       # Content
       @content = null
@@ -201,22 +218,22 @@
         'widget'  : @options.widget
         'close'   : @options.close
         'box'     : @options.box
-        'fx'      : @options.fx
+        'hidden'  : @options.hidden
 
       render = @options.template().replace /\{(.*?)\}/g, (a, b) ->
         return r[b]
 
       # Add widget on DOM
-      docBody.insertAdjacentHTML 'beforeend', render
+      docBody.insertAdjacentHTML 'beforeend', render.replace(/> </gi, '><')
 
       # Nullable
       r =
       render = null
 
       # Elements
-      @modal        = docBody.querySelector ".#{@options.modal}"
-      @closeHandler = @modal.querySelector ".#{@options.close}"
-      @box          = @modal.querySelector ".#{@options.box}"
+      @modal        = $ "##{@options.modal}"
+      @closeHandler = @modal.querySelector ".#{@css.close}"
+      @box          = @modal.querySelector ".#{@css.box}"
 
       # Move content
       if contentIsStr is false
@@ -273,7 +290,7 @@
 
     # Is open?
     isOpen: ->
-      isOpen = classie.has @modal, @options.fxOpen
+      isOpen = classie.has @modal, @css.visible
       return isOpen
 
     destroy: ->

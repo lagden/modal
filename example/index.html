@@ -159,7 +159,8 @@
       var modal = new Modal({
           content: '#modalContent',
           overlayElement: '.container',
-          widget: 'modalWidget modalWidget--base',
+          overlay: 'l-modal__overlay_blur',
+          widget: 'l-modal_base',
           beforeOpen: function(modal, close, content) {
               classie.add(content, 'alterado');
           }

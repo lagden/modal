@@ -65,20 +65,24 @@
 
       _p = {
         getTemplate: function() {
-          return '<div tabindex="0" class="{widget} {fx} {id}"> <div class="{close}"></div> <div class="{box}">{content}</div> </div>';
+          return '<div tabindex="0" id="{id}" class="{widget} {hidden}"> <div class="{close}"></div> <div class="{box}">{content}</div> </div>'.trim();
         },
         overlay: function(add) {
-          var method;
+          var css, method, _i, _len, _ref;
           if (add == null) {
             add = false;
           }
           if (this.overlayElement !== null) {
             method = add ? 'add' : 'remove';
-            classie[method](this.overlayElement, this.options.overlayClass);
+            _ref = this.options.overlay.split(' ');
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              css = _ref[_i];
+              classie[method](this.overlayElement, css);
+            }
           }
         },
         overflow: function(hidden) {
-          var method, preventScrollId;
+          var css, method, preventScrollId, _i, _len, _ref;
           if (hidden == null) {
             hidden = false;
           }
@@ -94,8 +98,12 @@
               docBody.removeAttribute('data-prevent');
               window.scrollTo(this.scrollX, this.scrollY);
             }
-            classie[method](docHtml, this.options.htmlBodyOpen);
-            classie[method](docBody, this.options.htmlBodyOpen);
+            _ref = this.options.htmlBodyOpen.split(' ');
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              css = _ref[_i];
+              classie[method](docHtml, css);
+              classie[method](docBody, css);
+            }
           }
         }
       };
@@ -116,9 +124,14 @@
           trigger = null;
         },
         onClose: function(event) {
+          var css, _i, _len, _ref;
           this.closeTrigger = true;
           if (this.isOpen() === true) {
-            classie.remove(this.modal, this.options.fxOpen);
+            _ref = this.options.visible.split(' ');
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              css = _ref[_i];
+              classie.remove(this.modal, css);
+            }
             if (this.transitionend === false) {
               this.handlers.end(null);
             }
@@ -126,12 +139,17 @@
           }
         },
         onOpen: function(event) {
+          var css, _i, _len, _ref;
           this.closeTrigger = false;
           if (this.isOpen() === false) {
             if (typeof this.options.beforeOpen === 'function') {
               this.options.beforeOpen(this.modal, this.closeHandler, this.box);
             }
-            classie.add(this.modal, this.options.fxOpen);
+            _ref = this.options.visible.split(' ');
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              css = _ref[_i];
+              classie.add(this.modal, css);
+            }
             _p.overlay.call(this, true);
             _p.overflow.call(this, true);
             this.modal.focus();
@@ -148,7 +166,7 @@
       };
 
       function Modal(options) {
-        var contentIsStr, err, r, render;
+        var contentIsStr, err, k, r, render, v, _ref;
         if (options == null) {
           options = {};
         }
@@ -161,19 +179,30 @@
           beforeOpen: null,
           preventScroll: true,
           overlayElement: null,
-          overlayClass: 'modalWidget--overlay',
-          modal: null,
-          widget: 'modalWidget',
-          close: 'modalWidget__close',
-          box: 'modalWidget__box',
-          fx: 'modalWidget-slidedown',
-          fxOpen: 'modalWidget-slidedown--open',
-          htmlBodyOpen: 'modalWidget-htmlBody--open'
+          overlay: '',
+          widget: '',
+          close: '',
+          box: '',
+          hidden: '',
+          visible: '',
+          htmlBodyOpen: ''
         };
-        if (this.options.modal === null) {
-          this.options.modal = "" + this.options.widget + this.id;
-        }
         extend(this.options, options);
+        this.css = {
+          overlay: 'l-modal__overlay',
+          widget: 'l-modal',
+          close: 'l-modal__close',
+          box: 'l-modal__box',
+          hidden: 'l-modal_hidden',
+          visible: 'l-modal_visible',
+          htmlBodyOpen: 'l-modal__htmlBody'
+        };
+        this.options.modal = "" + this.css.widget + this.id;
+        _ref = this.css;
+        for (k in _ref) {
+          v = _ref[k];
+          this.options[k] = ("" + v + " " + this.options[k]).trim();
+        }
         this.content = null;
         contentIsStr = false;
         if (typeof this.options.content === 'string') {
@@ -195,16 +224,16 @@
           'widget': this.options.widget,
           'close': this.options.close,
           'box': this.options.box,
-          'fx': this.options.fx
+          'hidden': this.options.hidden
         };
         render = this.options.template().replace(/\{(.*?)\}/g, function(a, b) {
           return r[b];
         });
-        docBody.insertAdjacentHTML('beforeend', render);
+        docBody.insertAdjacentHTML('beforeend', render.replace(/> </gi, '><'));
         r = render = null;
-        this.modal = docBody.querySelector("." + this.options.modal);
-        this.closeHandler = this.modal.querySelector("." + this.options.close);
-        this.box = this.modal.querySelector("." + this.options.box);
+        this.modal = $("#" + this.options.modal);
+        this.closeHandler = this.modal.querySelector("." + this.css.close);
+        this.box = this.modal.querySelector("." + this.css.box);
         if (contentIsStr === false) {
           this.box.appendChild(this.content);
         }
@@ -254,7 +283,7 @@
 
       Modal.prototype.isOpen = function() {
         var isOpen;
-        isOpen = classie.has(this.modal, this.options.fxOpen);
+        isOpen = classie.has(this.modal, this.css.visible);
         return isOpen;
       };
 

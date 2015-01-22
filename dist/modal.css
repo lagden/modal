@@ -3,27 +3,27 @@ html, body {
   padding: 0;
 }
 
-.modalWidget-htmlBody--open {
+.l-modal__htmlBody {
   width: 100%;
   height: 100%;
   overflow: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
-.modalOverlay,
-.modalWidget {
+.l-modal,
+.l-modal__overlay {
   width: 100%;
   height: 100%;
   top: 0;
   left: 0;
 }
-.modalOverlay:active, .modalOverlay:focus,
-.modalWidget:active,
-.modalWidget:focus {
+.l-modal:active, .l-modal:focus,
+.l-modal__overlay:active,
+.l-modal__overlay:focus {
   outline: none;
 }
 
-.modalWidget {
+.l-modal {
   position: fixed;
   z-index: 2000;
   background: rgba(255, 255, 255, 0.9);
@@ -37,16 +37,16 @@ html, body {
       -ms-flex-pack: center;
           justify-content: center;
 }
-.modalWidget:active, .modalWidget:focus {
+.l-modal:active, .l-modal:focus {
   outline: none;
 }
 
-.modalOverlay {
+.l-modal__overlay {
   position: absolute;
   z-index: 1;
 }
 
-.modalWidget__close {
+.l-modal__close {
   display: block;
   position: absolute;
   top: 25px;
@@ -65,7 +65,7 @@ html, body {
   border-radius: 5px;
 }
 
-.modalWidget__box {
+.l-modal__box {
   max-width: 50%;
   position: relative;
   z-index: 2;
@@ -73,7 +73,7 @@ html, body {
   padding: 1em;
 }
 
-.modalWidget-slidedown {
+.l-modal_hidden {
   visibility: hidden;
   -webkit-transform: translateY(-100%);
       -ms-transform: translateY(-100%);
@@ -82,7 +82,7 @@ html, body {
           transition: transform 0.4s ease-in-out, visibility 0s 0.4s;
 }
 
-.modalWidget-slidedown--open {
+.l-modal_visible {
   visibility: visible;
   -webkit-transform: translateY(0%);
       -ms-transform: translateY(0%);
@@ -91,11 +91,11 @@ html, body {
           transition: transform 0.4s ease-in-out;
 }
 
-.modalWidget--base {
+.l-modal_base {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-.modalWidget--overlay {
+.l-modal__overlay_blur {
   -webkit-filter: blur(3px);
           filter: blur(3px);
   -webkit-transition: all 0.4s ease-in-out;

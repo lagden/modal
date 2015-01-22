@@ -1,6 +1,6 @@
 {
   "name": "modal",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Open modal",
   "author": "Thiago Lagden <lagden@gmail.com>",
   "main": "./dist/modal.js",
