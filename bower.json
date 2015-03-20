@@ -1,6 +1,6 @@
 {
   "name": "modal",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Open modal",
   "author": "Thiago Lagden <lagden@gmail.com>",
   "main": "./dist/modal.js",
@@ -17,8 +17,9 @@
     ".*"
   ],
   "dependencies": {
-    "eventEmitter": "~4.2.8",
+    "eventEmitter": "~4.2.11",
     "classie": "~1.0.1",
-    "get-style-property": "~1.0.3"
+    "get-style-property": "~1.0.3",
+    "tap.js": "lagden/tap.js#bea960e7974b704e0f8442bece9b1df4729dd6b5"
   }
 }

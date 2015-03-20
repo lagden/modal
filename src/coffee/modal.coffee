@@ -3,12 +3,14 @@
     define [
         'classie/classie'
         'eventEmitter/EventEmitter'
+        'tap'
       ], factory
   else
     root.Modal = factory root.classie,
                          root.EventEmitter
+                         root.Tap
   return
-) @, (classie, EventEmitter) ->
+) @, (classie, EventEmitter, Tap) ->
 
   'use strict'
 
@@ -71,94 +73,6 @@
   # Class
   class Modal
 
-    # Private
-    _p =
-      getTemplate: ->
-        return '
-          <div tabindex="0" id="{id}" class="{widget} {hidden}">
-            <div class="{close}"></div>
-            <div class="{box}">{content}</div>
-          </div>
-        '.trim()
-
-      overlay: (add = false) ->
-        if @overlayElement isnt null
-          method = if add then 'add' else 'remove'
-          for css in @options.overlay.split(' ')
-            classie[method] @overlayElement, css
-        return
-
-      overflow: (hidden = false) ->
-        preventScrollId = +docBody.getAttribute('data-prevent')
-        preventScrollId = preventScrollId || @id
-        method = if hidden then 'add' else 'remove'
-
-        if @options.preventScroll and preventScrollId == @id
-
-          if hidden
-            docBody.setAttribute('data-prevent', @id)
-            @scrollY = scrollY()
-            @scrollX = scrollX()
-          else
-            docBody.removeAttribute('data-prevent')
-            window.scrollTo @scrollX, @scrollY
-
-          for css in @options.htmlBodyOpen.split(' ')
-            classie[method] docHtml, css
-            classie[method] docBody, css
-
-        return
-
-    # Event handler
-    _handlers =
-      onKeyUp: (event) ->
-        switch event.keyCode
-          when @keyCodes.esc
-            trigger = true
-          else
-            trigger = false
-
-        @handlers.close null if trigger is true
-        trigger = null
-        return
-
-      onClose: (event) ->
-        @closeTrigger = true
-
-        if @isOpen() is true
-          for css in @options.visible.split(' ')
-            classie.remove @modal, css
-
-          # Fallback transitionend
-          @handlers.end null if @transitionend is false
-
-          @.emitEvent 'close'
-        return
-
-      onOpen: (event) ->
-        @closeTrigger = false
-
-        if @isOpen() is false
-          if typeof @options.beforeOpen == 'function'
-            @options.beforeOpen @modal, @closeHandler, @box
-
-          for css in @options.visible.split(' ')
-            classie.add @modal, css
-
-          _p.overlay.call @, true
-          _p.overflow.call @, true
-
-          @modal.focus()
-          @.emitEvent 'open'
-        return
-
-      onTransitionEnd: (event) ->
-        if @closeTrigger is true
-          _p.overlay.call @, false
-          _p.overflow.call @, false
-          @closeTrigger = false
-        return
-
     constructor: (options = {}) ->
 
       # Globally unique identifiers
@@ -169,7 +83,7 @@
       # Options
       @options =
         esc            : true
-        template       : _p.getTemplate
+        template       : @getTemplate
         content        : ''
         beforeOpen     : null
         preventScroll  : true
@@ -252,25 +166,18 @@
       @keyCodes =
         'esc': 27
 
-      # Binding handlers to get success when call "removeListener"
-      @handlers =
-        'keyup': _handlers.onKeyUp.bind @
-        'open' : _handlers.onOpen.bind @
-        'close': _handlers.onClose.bind @
-        'end'  : _handlers.onTransitionEnd.bind @
-
       # Listeners
-      @closeHandler.addEventListener 'click', @handlers.close, false
-      @closeHandler.addEventListener 'touchstart', @handlers.close, false
+      new Tap @closeHandler
+      @closeHandler.addEventListener 'tap', @, false # close
 
       @transitionend = false
       @transitionend = true if typeof transitionend isnt 'undefined'
 
       if @transitionend
-        @modal.addEventListener transitionend, @handlers.end, false
+        @modal.addEventListener transitionend, @, false
 
       if @options.esc is true
-        @modal.addEventListener 'keyup', @handlers.keyup, false
+        @modal.addEventListener 'keyup', @, false
 
       # Flag
       @closeTrigger = false
@@ -278,14 +185,88 @@
 
       return
 
-    # Open
-    open: ->
-      @handlers.open null
+    getTemplate: ->
+      return '
+        <div tabindex="0" id="{id}" class="{widget} {hidden}">
+          <div class="{close}"></div>
+          <div class="{box}">{content}</div>
+        </div>
+      '.trim()
+
+    overlay: (add = false) ->
+      if @overlayElement isnt null
+        method = if add then 'add' else 'remove'
+        for css in @options.overlay.split(' ')
+          classie[method] @overlayElement, css
       return
 
-    # Close
+    overflow: (hidden = false) ->
+      preventScrollId = +docBody.getAttribute('data-prevent')
+      preventScrollId = preventScrollId || @id
+      method = if hidden then 'add' else 'remove'
+
+      if @options.preventScroll and preventScrollId == @id
+
+        if hidden
+          docBody.setAttribute('data-prevent', @id)
+          @scrollY = scrollY()
+          @scrollX = scrollX()
+        else
+          docBody.removeAttribute('data-prevent')
+          window.scrollTo @scrollX, @scrollY
+
+        for css in @options.htmlBodyOpen.split(' ')
+          classie[method] docHtml, css
+          classie[method] docBody, css
+      return
+
+    # Event handler
+    onKeyUp: (event) ->
+      switch event.keyCode
+        when @keyCodes.esc
+          trigger = true
+        else
+          trigger = false
+
+      @close null if trigger is true
+      trigger = null
+      return
+
+    onTransitionEnd: ->
+      if @closeTrigger is true
+        @overlay false
+        @overflow false
+        @closeTrigger = false
+      return
+
     close: ->
-      @handlers.close null
+      @closeTrigger = true
+
+      if @isOpen() is true
+        for css in @options.visible.split(' ')
+          classie.remove @modal, css
+
+        # Fallback transitionend
+        @onTransitionEnd null if @transitionend is false
+
+        @.emitEvent 'close'
+      return
+
+    open: ->
+      @closeTrigger = false
+
+      if @isOpen() is false
+        if typeof @options.beforeOpen == 'function'
+          @options.beforeOpen @modal, @closeHandler, @box
+
+        for css in @options.visible.split(' ')
+          classie.add @modal, css
+
+        @overlay true
+        @overflow true
+
+        @modal.focus()
+        @.emitEvent 'open'
       return
 
     # Is open?
@@ -296,13 +277,13 @@
     destroy: ->
       if @destroyed is false
         # Remove Listeners
-        @closeHandler.removeEventListener 'click', @handlers.close, false
+        @closeHandler.removeEventListener 'click', @, false
 
         if @transitionend
-          @modal.removeEventListener transitionend, @handlers.end, false
+          @modal.removeEventListener transitionend, @, false
 
         if @options.esc is true
-          @modal.removeEventListener 'keyup', @handlers.keyup, false
+          @modal.removeEventListener 'keyup', @, false
 
         # Remove all elements
         docBody.removeChild removeAllChildren(@modal)
@@ -310,6 +291,12 @@
         @destroyed = true
       return
 
+    handleEvent: (event) ->
+      switch event.type
+        when 'tap' then @close event
+        when 'keyup' then @onKeyUp event
+        when transitionend then @onTransitionEnd event
+      return
 
   # Extends
   extend Modal::, EventEmitter::

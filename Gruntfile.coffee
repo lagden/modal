@@ -44,6 +44,7 @@ Modal everywhere
           'dist/lib/classie/classie.js'
           'dist/lib/eventEmitter/EventEmitter.js'
           'dist/lib/get-style-property/get-style-property.js'
+          'dist/lib/tap.js/tap.js'
           'dist/modal.js'
         ]
         dest: 'dist/modal.pkg.js'

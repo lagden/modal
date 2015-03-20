@@ -1,11 +1,11 @@
 (function() {
   (function(root, factory) {
     if (typeof define === "function" && define.amd) {
-      define(['classie/classie', 'eventEmitter/EventEmitter'], factory);
+      define(['classie/classie', 'eventEmitter/EventEmitter', 'tap'], factory);
     } else {
-      root.Modal = factory(root.classie, root.EventEmitter);
+      root.Modal = factory(root.classie, root.EventEmitter, root.Tap);
     }
-  })(this, function(classie, EventEmitter) {
+  })(this, function(classie, EventEmitter, Tap) {
     'use strict';
     var $, GUID, Modal, docBody, docHtml, extend, isElement, removeAllChildren, scrollX, scrollY, transitionend, whichTransitionEnd;
     $ = document.querySelector.bind(document);
@@ -61,110 +61,6 @@
     transitionend = whichTransitionEnd();
     GUID = 0;
     Modal = (function() {
-      var _handlers, _p;
-
-      _p = {
-        getTemplate: function() {
-          return '<div tabindex="0" id="{id}" class="{widget} {hidden}"> <div class="{close}"></div> <div class="{box}">{content}</div> </div>'.trim();
-        },
-        overlay: function(add) {
-          var css, method, _i, _len, _ref;
-          if (add == null) {
-            add = false;
-          }
-          if (this.overlayElement !== null) {
-            method = add ? 'add' : 'remove';
-            _ref = this.options.overlay.split(' ');
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              css = _ref[_i];
-              classie[method](this.overlayElement, css);
-            }
-          }
-        },
-        overflow: function(hidden) {
-          var css, method, preventScrollId, _i, _len, _ref;
-          if (hidden == null) {
-            hidden = false;
-          }
-          preventScrollId = +docBody.getAttribute('data-prevent');
-          preventScrollId = preventScrollId || this.id;
-          method = hidden ? 'add' : 'remove';
-          if (this.options.preventScroll && preventScrollId === this.id) {
-            if (hidden) {
-              docBody.setAttribute('data-prevent', this.id);
-              this.scrollY = scrollY();
-              this.scrollX = scrollX();
-            } else {
-              docBody.removeAttribute('data-prevent');
-              window.scrollTo(this.scrollX, this.scrollY);
-            }
-            _ref = this.options.htmlBodyOpen.split(' ');
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              css = _ref[_i];
-              classie[method](docHtml, css);
-              classie[method](docBody, css);
-            }
-          }
-        }
-      };
-
-      _handlers = {
-        onKeyUp: function(event) {
-          var trigger;
-          switch (event.keyCode) {
-            case this.keyCodes.esc:
-              trigger = true;
-              break;
-            default:
-              trigger = false;
-          }
-          if (trigger === true) {
-            this.handlers.close(null);
-          }
-          trigger = null;
-        },
-        onClose: function(event) {
-          var css, _i, _len, _ref;
-          this.closeTrigger = true;
-          if (this.isOpen() === true) {
-            _ref = this.options.visible.split(' ');
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              css = _ref[_i];
-              classie.remove(this.modal, css);
-            }
-            if (this.transitionend === false) {
-              this.handlers.end(null);
-            }
-            this.emitEvent('close');
-          }
-        },
-        onOpen: function(event) {
-          var css, _i, _len, _ref;
-          this.closeTrigger = false;
-          if (this.isOpen() === false) {
-            if (typeof this.options.beforeOpen === 'function') {
-              this.options.beforeOpen(this.modal, this.closeHandler, this.box);
-            }
-            _ref = this.options.visible.split(' ');
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              css = _ref[_i];
-              classie.add(this.modal, css);
-            }
-            _p.overlay.call(this, true);
-            _p.overflow.call(this, true);
-            this.modal.focus();
-            this.emitEvent('open');
-          }
-        },
-        onTransitionEnd: function(event) {
-          if (this.closeTrigger === true) {
-            _p.overlay.call(this, false);
-            _p.overflow.call(this, false);
-            this.closeTrigger = false;
-          }
-        }
-      };
-
       function Modal(options) {
         var contentIsStr, err, k, r, render, v, _ref;
         if (options == null) {
@@ -174,7 +70,7 @@
         this.scrollY = this.scrollX = 0;
         this.options = {
           esc: true,
-          template: _p.getTemplate,
+          template: this.getTemplate,
           content: '',
           beforeOpen: null,
           preventScroll: true,
@@ -250,35 +146,124 @@
         this.keyCodes = {
           'esc': 27
         };
-        this.handlers = {
-          'keyup': _handlers.onKeyUp.bind(this),
-          'open': _handlers.onOpen.bind(this),
-          'close': _handlers.onClose.bind(this),
-          'end': _handlers.onTransitionEnd.bind(this)
-        };
-        this.closeHandler.addEventListener('click', this.handlers.close, false);
-        this.closeHandler.addEventListener('touchstart', this.handlers.close, false);
+        new Tap(this.closeHandler);
+        this.closeHandler.addEventListener('tap', this, false);
         this.transitionend = false;
         if (typeof transitionend !== 'undefined') {
           this.transitionend = true;
         }
         if (this.transitionend) {
-          this.modal.addEventListener(transitionend, this.handlers.end, false);
+          this.modal.addEventListener(transitionend, this, false);
         }
         if (this.options.esc === true) {
-          this.modal.addEventListener('keyup', this.handlers.keyup, false);
+          this.modal.addEventListener('keyup', this, false);
         }
         this.closeTrigger = false;
         this.destroyed = false;
         return;
       }
 
-      Modal.prototype.open = function() {
-        this.handlers.open(null);
+      Modal.prototype.getTemplate = function() {
+        return '<div tabindex="0" id="{id}" class="{widget} {hidden}"> <div class="{close}"></div> <div class="{box}">{content}</div> </div>'.trim();
+      };
+
+      Modal.prototype.overlay = function(add) {
+        var css, method, _i, _len, _ref;
+        if (add == null) {
+          add = false;
+        }
+        if (this.overlayElement !== null) {
+          method = add ? 'add' : 'remove';
+          _ref = this.options.overlay.split(' ');
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            css = _ref[_i];
+            classie[method](this.overlayElement, css);
+          }
+        }
+      };
+
+      Modal.prototype.overflow = function(hidden) {
+        var css, method, preventScrollId, _i, _len, _ref;
+        if (hidden == null) {
+          hidden = false;
+        }
+        preventScrollId = +docBody.getAttribute('data-prevent');
+        preventScrollId = preventScrollId || this.id;
+        method = hidden ? 'add' : 'remove';
+        if (this.options.preventScroll && preventScrollId === this.id) {
+          if (hidden) {
+            docBody.setAttribute('data-prevent', this.id);
+            this.scrollY = scrollY();
+            this.scrollX = scrollX();
+          } else {
+            docBody.removeAttribute('data-prevent');
+            window.scrollTo(this.scrollX, this.scrollY);
+          }
+          _ref = this.options.htmlBodyOpen.split(' ');
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            css = _ref[_i];
+            classie[method](docHtml, css);
+            classie[method](docBody, css);
+          }
+        }
+      };
+
+      Modal.prototype.onKeyUp = function(event) {
+        var trigger;
+        switch (event.keyCode) {
+          case this.keyCodes.esc:
+            trigger = true;
+            break;
+          default:
+            trigger = false;
+        }
+        if (trigger === true) {
+          this.close(null);
+        }
+        trigger = null;
+      };
+
+      Modal.prototype.onTransitionEnd = function() {
+        if (this.closeTrigger === true) {
+          this.overlay(false);
+          this.overflow(false);
+          this.closeTrigger = false;
+        }
       };
 
       Modal.prototype.close = function() {
-        this.handlers.close(null);
+        var css, _i, _len, _ref;
+        this.closeTrigger = true;
+        if (this.isOpen() === true) {
+          _ref = this.options.visible.split(' ');
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            css = _ref[_i];
+            classie.remove(this.modal, css);
+          }
+          if (this.transitionend === false) {
+            this.onTransitionEnd(null);
+          }
+          this.emitEvent('close');
+        }
+      };
+
+      Modal.prototype.open = function() {
+        var css, _i, _len, _ref;
+        this.closeTrigger = false;
+        if (this.isOpen() === false) {
+          if (typeof this.options.beforeOpen === 'function') {
+            this.options.beforeOpen(this.modal, this.closeHandler, this.box);
+          }
+          _ref = this.options.visible.split(' ');
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            css = _ref[_i];
+            classie.add(this.modal, css);
+          }
+          this.overlay(true);
+          this.overflow(true);
+          this.modal.focus();
+          this.emitEvent('open');
+        }
       };
 
       Modal.prototype.isOpen = function() {
@@ -289,15 +274,28 @@
 
       Modal.prototype.destroy = function() {
         if (this.destroyed === false) {
-          this.closeHandler.removeEventListener('click', this.handlers.close, false);
+          this.closeHandler.removeEventListener('click', this, false);
           if (this.transitionend) {
-            this.modal.removeEventListener(transitionend, this.handlers.end, false);
+            this.modal.removeEventListener(transitionend, this, false);
           }
           if (this.options.esc === true) {
-            this.modal.removeEventListener('keyup', this.handlers.keyup, false);
+            this.modal.removeEventListener('keyup', this, false);
           }
           docBody.removeChild(removeAllChildren(this.modal));
           this.destroyed = true;
+        }
+      };
+
+      Modal.prototype.handleEvent = function(event) {
+        switch (event.type) {
+          case 'tap':
+            this.close(event);
+            break;
+          case 'keyup':
+            this.onKeyUp(event);
+            break;
+          case transitionend:
+            this.onTransitionEnd(event);
         }
       };
 
